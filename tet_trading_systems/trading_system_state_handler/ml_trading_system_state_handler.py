@@ -10,7 +10,7 @@ from TETrading.position.position_manager import PositionManager
 from TETrading.signal_events.signal_handler import SignalHandler
 from TETrading.utils.monte_carlo_functions import calculate_safe_f, monte_carlo_simulate_returns
 
-from doc_database_meta_classes.tet_systems_doc_db import ITetSystemsDocumentDatabase # måste installera tet_doc_db för att komma åt detta namespace?
+from tet_doc_db.doc_database_meta_classes.tet_systems_doc_db import ITetSystemsDocumentDatabase
 
 
 class MlTradingSystemStateHandler:
