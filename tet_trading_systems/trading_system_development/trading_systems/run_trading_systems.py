@@ -1,4 +1,4 @@
-from doc_database_meta_classes.tet_systems_doc_db import ITetSystemsDocumentDatabase
+from tet_doc_db.doc_database_meta_classes.tet_systems_doc_db import ITetSystemsDocumentDatabase
 
 from TETrading.trading_system.trading_system import TradingSystem
 from TETrading.utils.monte_carlo_functions import calculate_safe_f

@@ -4,15 +4,15 @@ from typing import List
 from trading_system_properties.trading_system_properties import TradingSystemProperties
 from trading_system_properties.ml_trading_system_properties import MlTradingSystemProperties
 
-from doc_database_meta_classes.tet_signals_doc_db import ITetSignalsDocumentDatabase
-from doc_database_meta_classes.tet_systems_doc_db import ITetSystemsDocumentDatabase
-from doc_database_meta_classes.tet_portfolio_doc_db import ITetPortfolioDocumentDatabase
-from doc_database_meta_classes.time_series_doc_db import ITimeSeriesDocumentDatabase
-from tet_mongo_db.systems_mongo_db import TetSystemsMongoDb
-from tet_firestore_db.systems_firestore_db import TetSystemsFirestoreDb
-from tet_mongo_db.portfolio_mongo_db import TetPortfolioMongoDb
-from time_series_mongo_db.time_series_mongo_db import TimeSeriesMongoDb
-from instruments_mongo_db.instruments_mongo_db import InstrumentsMongoDb
+from tet_doc_db.doc_database_meta_classes.tet_signals_doc_db import ITetSignalsDocumentDatabase
+from tet_doc_db.doc_database_meta_classes.tet_systems_doc_db import ITetSystemsDocumentDatabase
+from tet_doc_db.doc_database_meta_classes.tet_portfolio_doc_db import ITetPortfolioDocumentDatabase
+from tet_doc_db.doc_database_meta_classes.time_series_doc_db import ITimeSeriesDocumentDatabase
+from tet_doc_db.tet_mongo_db.systems_mongo_db import TetSystemsMongoDb
+from tet_doc_db.tet_firestore_db.systems_firestore_db import TetSystemsFirestoreDb
+from tet_doc_db.tet_mongo_db.portfolio_mongo_db import TetPortfolioMongoDb
+from tet_doc_db.time_series_mongo_db.time_series_mongo_db import TimeSeriesMongoDb
+from tet_doc_db.instruments_mongo_db.instruments_mongo_db import InstrumentsMongoDb
 
 
 def handle_trading_system(
@@ -79,7 +79,7 @@ def handle_trading_system_portfolio(
 
 
 if __name__ == '__main__':
-    import system_development.live_systems.env as env
+    import tet_trading_systems.trading_system_development.trading_systems.env as env
     INSTRUMENTS_DB = InstrumentsMongoDb(env.LOCALHOST_MONGO_DB_URL, 'instruments_db')
     TIME_SERIES_DB = TimeSeriesMongoDb(env.LOCALHOST_MONGO_DB_URL, 'time_series_db')
     SYSTEMS_DB = TetSystemsMongoDb(env.LOCALHOST_MONGO_DB_URL, 'systems_db')
@@ -104,9 +104,9 @@ if __name__ == '__main__':
     systems_props_list: List[TradingSystemProperties] = []
     ml_systems_props_list: List[MlTradingSystemProperties] = []
 
-    from system_development.systems_t1.mean_reversion_stocks import get_mean_reversion_stocks_props
-    mean_reversion_stocks_props = get_mean_reversion_stocks_props(INSTRUMENTS_DB)
-    systems_props_list.append(mean_reversion_stocks_props)
+    #from system_development.systems_t1.mean_reversion_stocks import get_mean_reversion_stocks_props
+    #mean_reversion_stocks_props = get_mean_reversion_stocks_props(INSTRUMENTS_DB)
+    #systems_props_list.append(mean_reversion_stocks_props)
  
     #from system_development.systems_t1.low_vol_bo import get_low_vol_bo_props
     #low_vol_bo_props = get_low_vol_bo_props(INSTRUMENTS_DB)

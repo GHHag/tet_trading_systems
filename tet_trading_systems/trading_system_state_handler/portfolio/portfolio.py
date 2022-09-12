@@ -3,12 +3,12 @@ from typing import Union
 
 from bson import json_util
 
-from doc_database_meta_classes.tet_systems_doc_db import ITetSystemsDocumentDatabase
-from doc_database_meta_classes.tet_portfolio_doc_db import ITetPortfolioDocumentDatabase
+from tet_doc_db.doc_database_meta_classes.tet_systems_doc_db import ITetSystemsDocumentDatabase
+from tet_doc_db.doc_database_meta_classes.tet_portfolio_doc_db import ITetPortfolioDocumentDatabase
 
-from trading_system_state_handler.portfolio.i_target_portfolio_creator \
+from tet_trading_systems.trading_system_state_handler.portfolio.i_target_portfolio_creator \
     import ITargetPortfolioCreator
-from trading_system_state_handler.order_execution.i_order_execution_handler \
+from tet_trading_systems.trading_system_state_handler.order_execution.i_order_execution_handler \
     import IOrderExecutionHandler
 
 

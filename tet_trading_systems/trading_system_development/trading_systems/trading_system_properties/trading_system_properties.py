@@ -1,7 +1,7 @@
 from typing import Tuple, Callable
 
-from trading_system_state_handler.trad_trading_system_state_handler import TradingSystemStateHandler
-from trading_system_state_handler.portfolio.portfolio import Portfolio
+from tet_trading_systems.trading_system_state_handler.trad_trading_system_state_handler import TradingSystemStateHandler
+from tet_trading_systems.trading_system_state_handler.portfolio.portfolio import Portfolio
 
 
 class TradingSystemProperties:
