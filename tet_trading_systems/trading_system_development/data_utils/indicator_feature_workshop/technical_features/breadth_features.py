@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from system_development.data_utils.indicator_feature_workshop.technical_features.standard_indicators \
+from tet_trading_systems.trading_system_development.data_utils.indicator_feature_workshop.technical_features.standard_indicators \
     import apply_sma
 
 

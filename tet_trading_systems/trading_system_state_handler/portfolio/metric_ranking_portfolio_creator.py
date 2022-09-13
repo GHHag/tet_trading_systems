@@ -1,6 +1,6 @@
 from operator import itemgetter
 
-from trading_system_state_handler.portfolio.i_target_portfolio_creator import ITargetPortfolioCreator
+from tet_trading_systems.trading_system_state_handler.portfolio.i_target_portfolio_creator import ITargetPortfolioCreator
 
 
 class MetricRankingPortfolioCreator(ITargetPortfolioCreator):

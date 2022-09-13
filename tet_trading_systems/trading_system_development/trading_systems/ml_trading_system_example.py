@@ -14,17 +14,17 @@ from sklearn.metrics import mean_squared_error, r2_score, classification_report,
 
 from securities_db_py_dal.dal import price_data_get_req
 
-from tet_mongo_db.systems_mongo_db import TetSystemsMongoDb
-from instruments_mongo_db.instruments_mongo_db import InstrumentsMongoDb
+from tet_doc_db.tet_mongo_db.systems_mongo_db import TetSystemsMongoDb
+from tet_doc_db.instruments_mongo_db.instruments_mongo_db import InstrumentsMongoDb
 
 from TETrading.position.position_sizer.ext_position_sizer import ExtPositionSizer
 
 from trading_system_properties.ml_trading_system_properties import MlTradingSystemProperties
 
-from trading_system_state_handler.ml_trading_system_state_handler import MlTradingSystemStateHandler
+from tet_trading_systems.trading_system_state_handler.ml_trading_system_state_handler import MlTradingSystemStateHandler 
 
-from system_development.ml_utils.ml_system_utils import serialize_models
-from system_development.live_systems.run_systems import run_ext_pos_sizer_trading_system
+from tet_trading_systems.trading_system_development.ml_utils.ml_system_utils import serialize_models
+from tet_trading_systems.trading_system_development.trading_systems.run_trading_systems import run_ext_pos_sizer_trading_system
 
 
 def ml_entry_classification(df, *args, entry_args=None):

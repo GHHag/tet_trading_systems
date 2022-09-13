@@ -14,7 +14,7 @@ from trading_system_properties.trading_system_properties import TradingSystemPro
 
 from tet_trading_systems.trading_system_state_handler.trad_trading_system_state_handler import TradingSystemStateHandler
 
-from trading_system_development.trading_systems.run_trading_systems import run_ext_pos_sizer_trading_system
+from tet_trading_systems.trading_system_development.trading_systems.run_trading_systems import run_ext_pos_sizer_trading_system
 
 
 def entry_logic_example(df, *args, entry_args=None):
