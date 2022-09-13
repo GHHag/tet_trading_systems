@@ -1,6 +1,6 @@
 from typing import List, Tuple, Callable
 
-from trading_system_properties.trading_system_properties import TradingSystemProperties
+from tet_trading_systems.trading_system_development.trading_systems.trading_system_properties.trading_system_properties import TradingSystemProperties
 
 from tet_trading_systems.trading_system_state_handler.ml_trading_system_state_handler import MlTradingSystemStateHandler
 from tet_trading_systems.trading_system_state_handler.portfolio.portfolio import Portfolio

@@ -1,7 +1,7 @@
 import json
 from pprint import pprint
 
-from trading_system_state_handler.portfolio.portfolio import Portfolio
+from tet_trading_systems.trading_system_state_handler.portfolio.portfolio import Portfolio
 
 
 class ManualPortfolioHandler(Portfolio):
