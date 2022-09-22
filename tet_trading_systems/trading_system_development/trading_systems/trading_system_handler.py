@@ -9,7 +9,6 @@ from tet_doc_db.doc_database_meta_classes.tet_systems_doc_db import ITetSystemsD
 from tet_doc_db.doc_database_meta_classes.tet_portfolio_doc_db import ITetPortfolioDocumentDatabase
 from tet_doc_db.doc_database_meta_classes.time_series_doc_db import ITimeSeriesDocumentDatabase
 from tet_doc_db.tet_mongo_db.systems_mongo_db import TetSystemsMongoDb
-from tet_doc_db.tet_firestore_db.systems_firestore_db import TetSystemsFirestoreDb
 from tet_doc_db.tet_mongo_db.portfolio_mongo_db import TetPortfolioMongoDb
 from tet_doc_db.time_series_mongo_db.time_series_mongo_db import TimeSeriesMongoDb
 from tet_doc_db.instruments_mongo_db.instruments_mongo_db import InstrumentsMongoDb
@@ -83,34 +82,28 @@ if __name__ == '__main__':
     INSTRUMENTS_DB = InstrumentsMongoDb(env.LOCALHOST_MONGO_DB_URL, 'instruments_db')
     TIME_SERIES_DB = TimeSeriesMongoDb(env.LOCALHOST_MONGO_DB_URL, 'time_series_db')
     SYSTEMS_DB = TetSystemsMongoDb(env.LOCALHOST_MONGO_DB_URL, 'systems_db')
-    #SYSTEMS_DB = TetSystemsMongoDb(env.ATLAS_MONGO_DB_URL, 'systems_db')
-    #CLIENT_DB = TetSystemsFirestoreDb(env.TET_FIREBASE_CREDENTIALS)
-    #CLIENT_DB = SYSTEMS_DB
-    #CLIENT_DB = TetSystemsMongoDb(env.LOCALHOST_MONGO_DB_URL, 'client_db')
-    ML_SYSTEMS_DB = TetSystemsMongoDb(env.LOCALHOST_MONGO_DB_URL, 'ml_systems_db')
-    #ML_SYSTEMS_DB = TetSystemsMongoDb(env.ATLAS_MONGO_DB_URL, 'ml_systems_db')
-    #ML_ORDERS_DB = TetSystemsFirestoreDb(env.TET_FIREBASE_CREDENTIALS)
+    CLIENT_DB = TetSystemsMongoDb(env.LOCALHOST_MONGO_DB_URL, 'client_db')
+    
+    ML_SYSTEMS_DB = TetSystemsMongoDb(env.LOCALHOST_MONGO_DB_URL, 'systems_db')
     ML_ORDERS_DB = ML_SYSTEMS_DB 
-    #PORTFOLIOS_DB = TetPortfolioMongoDb(env.LOCALHOST_MONGO_DB_URL, 'client_db')
 
-    CLIENT_DB = TetSystemsMongoDb(env.ATLAS_MONGO_DB_URL, 'client_db')
-    PORTFOLIOS_DB = TetPortfolioMongoDb(env.ATLAS_MONGO_DB_URL, 'client_db')
+    PORTFOLIOS_DB = TetPortfolioMongoDb(env.LOCALHOST_MONGO_DB_URL, 'client_db')
 
-    start_dt = dt.datetime(2015, 9, 16)
-    end_dt = dt.datetime.now()
-    #start_dt = dt.datetime(1999, 1, 1)
-    #end_dt = dt.datetime(2011, 1, 1)
+    #start_dt = dt.datetime(2015, 9, 16)
+    #end_dt = dt.datetime.now()
+    start_dt = dt.datetime(1999, 1, 1)
+    end_dt = dt.datetime(2011, 1, 1)
 
     systems_props_list: List[TradingSystemProperties] = []
     ml_systems_props_list: List[MlTradingSystemProperties] = []
 
-    from tet_trading_systems.trading_system_development.trading_systems.live_systems.mean_reversion_stocks import get_mean_reversion_stocks_props
-    mean_reversion_stocks_props = get_mean_reversion_stocks_props(INSTRUMENTS_DB)
-    systems_props_list.append(mean_reversion_stocks_props)
+    #from tet_trading_systems.trading_system_development.trading_systems.live_systems.mean_reversion_stocks import get_mean_reversion_stocks_props
+    #mean_reversion_stocks_props = get_mean_reversion_stocks_props(INSTRUMENTS_DB)
+    #systems_props_list.append(mean_reversion_stocks_props)
  
-    from tet_trading_systems.trading_system_development.trading_systems.trading_system_example import get_example_system_props
-    example_system_props = get_example_system_props(INSTRUMENTS_DB)
-    systems_props_list.append(example_system_props)
+    #from tet_trading_systems.trading_system_development.trading_systems.trading_system_example import get_example_system_props
+    #example_system_props = get_example_system_props(INSTRUMENTS_DB)
+    #systems_props_list.append(example_system_props)
  
     #from system_development.systems_t1.low_vol_bo import get_low_vol_bo_props
     #low_vol_bo_props = get_low_vol_bo_props(INSTRUMENTS_DB)
@@ -120,9 +113,9 @@ if __name__ == '__main__':
     #omxs_ml_system_props = get_omxs_ml_system_props(INSTRUMENTS_DB)
     #ml_systems_props_list.append(omxs_ml_system_props)
 
-    #from system_development.ml_trading_systems.ml_system_dev_framework import get_example_ml_system_props
-    #example_ml_system_props = get_example_ml_system_props(INSTRUMENTS_DB)
-    #ml_systems_props_list.append(example_ml_system_props)
+    from tet_trading_systems.trading_system_development.trading_systems.ml_trading_system_example import get_example_ml_system_props
+    example_ml_system_props = get_example_ml_system_props(INSTRUMENTS_DB)
+    ml_systems_props_list.append(example_ml_system_props)
 
     for system_props in systems_props_list:
         handle_trading_system(

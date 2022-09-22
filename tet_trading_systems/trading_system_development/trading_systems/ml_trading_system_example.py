@@ -232,7 +232,8 @@ def create_classification_models(
 
 
 def create_production_models(
-    db, df_dict: Dict[str, pd.DataFrame], system_name, *args, 
+    db: TetSystemsMongoDb, df_dict: Dict[str, pd.DataFrame], 
+    system_name, *args, 
     target_col='Close', target_period=1
 ):
     models_dict = {}
@@ -283,7 +284,8 @@ def create_production_models(
 
     binary_models = serialize_models(models_dict)
     for symbol, model in binary_models.items():
-        if not db.insert_ml_model(f'{system_name}_{symbol}', symbol, model):
+        #if not db.insert_ml_model(f'{system_name}_{symbol}', symbol, model):
+        if not db.insert_ml_model(f'{system_name}', symbol, model):
             print(symbol)
             raise Exception('Something went wrong while inserting to or updating database.')
     return True
@@ -334,8 +336,9 @@ def preprocess_data(
 
 def get_example_ml_system_props(instruments_db: InstrumentsMongoDb, target_period=1):
     system_name = 'example_ml_system'
-    symbols_list = ['SKF_B', 'VOLV_B']
-    system_name_symbol_suffix = True
+    #symbols_list = ['SKF_B', 'VOLV_B']
+    symbols_list = ['VOLV_B']
+    system_name_symbol_suffix = False 
     """ symbols_list = json.loads(
         instruments_db.get_market_list_instrument_symbols(
             instruments_db.get_market_list_id('omxs30')
@@ -347,27 +350,28 @@ def get_example_ml_system_props(instruments_db: InstrumentsMongoDb, target_perio
         (
             symbols_list, '^OMX', price_data_get_req
         ),
-        symbols_list,
         MlTradingSystemStateHandler,
-        (system_name, system_name_symbol_suffix),
+        #(system_name, system_name_symbol_suffix),
+        (system_name, ),
         (
             ml_entry_regression, ml_exit_regression,
             ExtPositionSizer('sharpe_ratio'),
             {'req_period_iters': target_period, 'entry_period_lookback': target_period},
             {'exit_period_lookback': target_period}
         ),
-        None, (), ()
+        None, (), (),
+        symbols_list
     )
 
 
 if __name__ == '__main__':
-    SYSTEMS_DB = TetSystemsMongoDb('mongodb://localhost:27017/', 'ml_systems_db')
+    SYSTEMS_DB = TetSystemsMongoDb('mongodb://localhost:27017/', 'systems_db')
     INSTRUMENTS_DB = InstrumentsMongoDb('mongodb://localhost:27017/', 'instruments_db')
 
     start_dt = dt.datetime(1999, 1, 1)
     end_dt = dt.datetime(2011, 1, 1)
 
-    target_period=1
+    target_period = 1
     system_props = get_example_ml_system_props(INSTRUMENTS_DB, target_period=target_period)
 
     df_dict, pred_features = system_props.preprocess_data_function(
@@ -378,19 +382,31 @@ if __name__ == '__main__':
     model_data_dict = create_reg_models(df_dict, target_period=target_period)
     #model_data_dict = create_classification_models(df_dict, target_period=target_period)
 
-    create_production_models(SYSTEMS_DB, model_data_dict, 'example_ml_system', {'target_period': target_period})
+    #create_production_models(SYSTEMS_DB, model_data_dict, 'example_ml_system', {'target_period': target_period})
+    #create_production_models(ML_MODELS_DB, model_data_dict, 'example_ml_system', {'target_period': target_period})
     if not create_production_models(
         SYSTEMS_DB, df_dict, 'example_ml_system', target_period=target_period
+        #ML_MODELS_DB, df_dict, 'example_ml_system', target_period=target_period
     ):
         raise Exception('Failed to create model')
 
-    for symbol, dataframe in model_data_dict.items():
+    run_ext_pos_sizer_trading_system(
+        model_data_dict, 'example_ml_system', 
+        ml_entry_regression, ml_exit_regression, 
+        ExtPositionSizer('sharpe_ratio'),
+        entry_args={'req_period_iters': target_period, 'entry_period_lookback': target_period}, 
+        exit_args={'exit_period_lookback'}, 
+        plot_fig=False,
+        systems_db=SYSTEMS_DB, client_db=SYSTEMS_DB, insert_into_db=True
+    )
+    """ for symbol, dataframe in model_data_dict.items():
         run_ext_pos_sizer_trading_system(
-            {symbol: dataframe}, f'example_ml_system_{symbol}', 
+            #{symbol: dataframe}, f'example_ml_system_{symbol}', 
+            {symbol: dataframe}, 'example_ml_system', 
             ml_entry_regression, ml_exit_regression, 
             ExtPositionSizer('sharpe_ratio'),
             entry_args={'req_period_iters': target_period, 'entry_period_lookback': target_period}, 
             exit_args={'exit_period_lookback'}, 
-            plot_fig=True,
-            systems_db=SYSTEMS_DB, client_db=SYSTEMS_DB, insert_into_db=False
-        )
+            plot_fig=False,
+            systems_db=SYSTEMS_DB, client_db=SYSTEMS_DB, insert_into_db=True
+        ) """

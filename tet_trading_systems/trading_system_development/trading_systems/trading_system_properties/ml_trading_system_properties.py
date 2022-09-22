@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import List, Tuple, Callable
 
 from tet_trading_systems.trading_system_development.trading_systems.trading_system_properties.trading_system_properties import TradingSystemProperties
@@ -6,9 +7,11 @@ from tet_trading_systems.trading_system_state_handler.ml_trading_system_state_ha
 from tet_trading_systems.trading_system_state_handler.portfolio.portfolio import Portfolio
 
 
+@dataclass(frozen=True)
 class MlTradingSystemProperties(TradingSystemProperties):
+    system_instruments_list: List[str]
 
-    def __init__(
+    """ def __init__(
         self,
         preprocess_data_function: Callable, preprocess_data_args: Tuple,
         system_instruments_list: List[str],
@@ -26,4 +29,4 @@ class MlTradingSystemProperties(TradingSystemProperties):
 
     @property
     def system_instruments_list(self):
-        return self.__system_instruments_list
+        return self.__system_instruments_list """
