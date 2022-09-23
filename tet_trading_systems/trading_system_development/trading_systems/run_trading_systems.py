@@ -113,9 +113,8 @@ def run_ext_pos_sizer_trading_system(
 
         if ts_run < 1:
             sorted_position_lists = sorted(ts.pos_lists, key=len, reverse=True)
-            #position_list_lengths = [len(i) for i in sorted_position_lists[:int(len(data_dict) / 4)]] if len(data_dict) > 1 \
             position_list_lengths = [len(i) for i in sorted_position_lists[:int(len(data_dict) / 4 + 0.5)]] if len(data_dict) > 1 \
-                else [len(sorted_position_lists[0])] 
+                else [len(sorted_position_lists[0])]
             avg_yearly_positions = int((sum(position_list_lengths) / len(position_list_lengths)) / years_to_forecast + 0.5) 
             capital_f = round(calculate_safe_f(
                 ts.full_pos_list, ts.total_period_len, tolerated_pct_max_dd, dd_percentile_threshold,
@@ -140,7 +139,7 @@ def run_ext_pos_sizer_trading_system(
                         'profit_factor': float(mc_data[-1]['Profit factor']),
                         'CAR25': mc_data[-1]['CAR25'],
                         'CAR75': mc_data[-1]['CAR75'],
-                        'safe_F': capital_f
+                        'safe-f': capital_f
                     },
                     {
                         'num_of_periods': num_of_periods
