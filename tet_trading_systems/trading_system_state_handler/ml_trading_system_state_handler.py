@@ -10,13 +10,14 @@ from TETrading.position.position_manager import PositionManager
 from TETrading.signal_events.signal_handler import SignalHandler
 from TETrading.utils.monte_carlo_functions import calculate_safe_f, monte_carlo_simulate_returns
 
-from tet_doc_db.doc_database_meta_classes.tet_systems_doc_db import ITetSystemsDocumentDatabase
+from tet_doc_db.tet_mongo_db.systems_mongo_db import TetSystemsMongoDb
 
 
 class MlTradingSystemStateHandler:
+    
+
     def __init__(
-        self, system_name, symbol, 
-        db: ITetSystemsDocumentDatabase, df: pd.DataFrame,  
+        self, system_name, symbol, db: TetSystemsMongoDb, df: pd.DataFrame,  
         date_format='%Y-%m-%d'
     ):
         self.__system_name = system_name
@@ -53,7 +54,7 @@ class MlTradingSystemStateHandler:
                 'profit_factor': float(system_metrics[-1]['Profit factor']),
                 'CAR25': system_metrics[-1]['CAR25'],
                 'CAR75': system_metrics[-1]['CAR75'],
-                'safe_F': system_metrics[-1]['safe_F']
+                'safe-f': system_metrics[-1]['safe-f']
             },
             {
                 'num_of_periods': num_testing_periods
@@ -73,7 +74,6 @@ class MlTradingSystemStateHandler:
         for ts_run in range(2):
             if ts_run < 1:
                 capital_f = round(calculate_safe_f(
-                    # beraekningarna haer behöver aendras - se run_systems
                     self.__position_list, num_testing_periods, tolerated_pct_max_dd, dd_percentile_threshold,
                     forecast_positions=avg_yearly_positions * (years_to_forecast + 1),
                     forecast_data_fraction=(avg_yearly_positions / len(self.__position_list)) * years_to_forecast,
@@ -86,23 +86,10 @@ class MlTradingSystemStateHandler:
                     data_amount_used=(avg_yearly_positions / len(self.__position_list)) * years_to_forecast,
                     print_dataframe=print_dataframe, plot_fig=plot_fig
                 )
-                mc_data[-1]['safe_F'] = capital_f
+                mc_data[-1]['safe-f'] = capital_f
                 return mc_data
 
     def _handle_entry_signal(self):
-        print()
-        print('_handle_entry_signal', self.__symbol)
-        print('self.__market_state_data["market_state"]', self.__market_state_data['market_state'])
-        print("self.__market_state_data['market_state'] == 'entry'", self.__market_state_data['market_state'] == 'entry')
-        print()
-        print("self.__df['Date'].iloc[-2]", self.__df['Date'].iloc[-2])
-        print("self.__market_state_data['signal_dt']", self.__market_state_data['signal_dt'])
-        print(type(self.__market_state_data['signal_dt'])) # str
-        print("pd.Timestamp(self.__market_state_data['signal_dt'])", pd.Timestamp(self.__market_state_data['signal_dt']))
-        print("self.__df['Date'].iloc[-2] == pd.Timestamp(self.__market_state_data['signal_dt'])", self.__df['Date'].iloc[-2] == pd.Timestamp(self.__market_state_data['signal_dt']))
-        print('last position element active_position:', self.__position_list[-1].active_position)
-        print()
-        input('xxxxxxxxxxx')
         if self.__market_state_data['market_state'] == 'entry' and \
             self.__df['Date'].iloc[-2] == pd.Timestamp(self.__market_state_data['signal_dt']) and \
                 not self.__position_list[-1].active_position:
@@ -120,13 +107,6 @@ class MlTradingSystemStateHandler:
         capital=10000, num_of_sims=2500, yearly_periods=251, years_to_forecast=2, 
         insert_into_db=False, plot_fig=True, **kwargs
     ):
-        print()
-        print('_handle_enter_market_state', self.__symbol)
-        print('self.__position_list[-1].exit_signal_dt:', self.__position_list[-1].exit_signal_dt)
-        print('self.__position_list[-1].exit_signal_dt == self.__df["Date"].iloc[-2]', self.__position_list[-1].exit_signal_dt == self.__df['Date'].iloc[-2])
-        print('self.__df["Date"].iloc[-2]', self.__df['Date'].iloc[-2])
-        print()
-        input('xxxxxxxxxxx')
         if entry_logic_function(self.__df.iloc[-entry_args['entry_period_lookback']:], entry_args) and \
             self.__position_list[-1].exit_signal_dt and \
                 not self.__position_list[-1].exit_signal_dt == self.__df['Date'].iloc[-2]:
@@ -136,8 +116,7 @@ class MlTradingSystemStateHandler:
                     'signal_index': len(self.__df), 
                     'signal_dt': self.__df['Date'].iloc[-1], 
                     'symbol': self.__symbol,
-                    #self.__state_column: 'entry'
-                    'market_state': 'entry'
+                    self.__systems_db.METRICS_FIELD: 'entry'
                 }
             )
             mask = (self.__df['Date'] > str(self.__position_list[0].entry_dt)) & \
@@ -145,7 +124,7 @@ class MlTradingSystemStateHandler:
             num_testing_periods = len(self.__df.loc[mask])
             avg_yearly_positions = int(len(self.__position_list) / (num_testing_periods / yearly_periods) + 0.5)
             position_manager = PositionManager(
-                self.__symbol, num_testing_periods, capital, self.__system_metrics['metrics']['safe_F'],
+                self.__symbol, num_testing_periods, capital, self.__system_metrics['metrics']['safe-f'],
                 asset_price_series=[float(close) for close in self.__df.loc[mask]['Close']]
             )
             position_manager.generate_positions(self._generate_position_sequence)
@@ -172,25 +151,10 @@ class MlTradingSystemStateHandler:
             print(f'\nEntry signal, buy next open\nIndex {len(self.__df)}')
 
     def _handle_active_pos_state(self):
-        print()
-        print('_handle_active_pos_state', self.__symbol)
-        print("self.__df['Date'].iloc[-1]", self.__df['Date'].iloc[-1])
-        print("pd.Timestamp(self.__market_state_data['signal_dt'])", pd.Timestamp(self.__market_state_data['signal_dt']))
-        print("self.__df['Date'].iloc[-1] != pd.Timestamp(self.__market_state_data['signal_dt'])", self.__df['Date'].iloc[-1] != pd.Timestamp(self.__market_state_data['signal_dt']))
-        print()
-        input('xxxxxxxxxxxxxxx')
         if self.__df['Date'].iloc[-1] != pd.Timestamp(self.__market_state_data['signal_dt']):
             self.__position_list[-1].update(Decimal(self.__df['Close'].iloc[-1]))
         self.__position_list[-1].print_position_stats()
 
-        print()
-        print("self.__market_state_data['market_state']", self.__market_state_data['market_state'])
-        print("self.__market_state_data['market_state'] == 'exit'", self.__market_state_data['market_state'] == 'exit')
-        print("self.__df['Date'].iloc[-2]", self.__df['Date'].iloc[-2])
-        print("pd.Timestamp(self.__market_state_data['signal_dt'])", pd.Timestamp(self.__market_state_data['signal_dt']))
-        print("self.__df['Date'].iloc[-2] == pd.Timestamp(self.__market_state_data['signal_dt'])", self.__df['Date'].iloc[-2] == pd.Timestamp(self.__market_state_data['signal_dt']))
-        print()
-        input('xxxxxxxxxx')
         if self.__market_state_data['market_state'] == 'exit' and \
             self.__df['Date'].iloc[-2] == pd.Timestamp(self.__market_state_data['signal_dt']):
             self.__position_list[-1].exit_market(
@@ -211,8 +175,7 @@ class MlTradingSystemStateHandler:
                     'symbol': self.__symbol, 
                     'periods_in_position': len(self.__position_list[-1].returns_list),
                     'unrealised_return': self.__position_list[-1].unrealised_return,
-                    #self.__state_column: 'active'
-                    'market_state': 'active'
+                    self.__systems_db.METRICS_FIELD: 'active'
                 }
             )
             return True
@@ -223,10 +186,6 @@ class MlTradingSystemStateHandler:
             self.__position_list[-1].entry_price, exit_args, len(self.__position_list[-1].returns_list)
         )
         if exit_condition:
-            print()
-            print('_handle_exit_market_state')
-            print('exit condition: ', exit_condition)
-            input('xxxxxxxxxx')
             self.__signal_handler.handle_exit_signal(
                 self.__symbol,
                 {
@@ -235,8 +194,7 @@ class MlTradingSystemStateHandler:
                     'symbol': self.__symbol, 
                     'periods_in_position': len(self.__position_list[-1].returns_list),
                     'unrealised_return': self.__position_list[-1].unrealised_return,
-                    #self.__state_column: 'exit'
-                    'market_state': 'exit'
+                    self.__systems_db.METRICS_FIELD: 'exit'
                 }
             )
             print(f'\nExit signal, exit next open\nIndex {len(self.__df)}')
@@ -255,15 +213,10 @@ class MlTradingSystemStateHandler:
             raise Exception("Given parameter for 'entry_args' or 'exit_args' is missing required key(s).")
 
         if self.__df['Date'].iloc[-1] != pd.Timestamp(self.__market_state_data['signal_dt']):
-            #if self.__model: # type hinta sklearn superklass för modeller?
             self._handle_entry_signal()
             latest_data_point = self.__df.iloc[-1].copy()
             latest_data_point['pred'] = self.__model.predict(pred_features[-1].reshape(1, -1))[0]
             self.__df = self.__df.iloc[:-1].append(latest_data_point, ignore_index=True)
-            #else:
-            #    raise Exception(
-            #        'Something went wrong while predictions with the model.'
-            #    )
 
             if isinstance(self.__position_list[-1], Position) and self.__position_list[-1].active_position:
                 active_pos = self._handle_active_pos_state()
@@ -291,5 +244,7 @@ class MlTradingSystemStateHandler:
                 self.__system_name, self.__symbol, self.__position_list, len(self.__df)
             )
             if not result:
-                print('List of Position objects were not modified.\n' + 
-                    'Insert position list result: ' + str(result))
+                print(
+                    'List of Position objects were not modified.\n' + 
+                    'Insert position list result: ' + str(result)
+                )

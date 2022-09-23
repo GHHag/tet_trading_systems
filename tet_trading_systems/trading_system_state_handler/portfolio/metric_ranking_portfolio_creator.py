@@ -29,7 +29,7 @@ class MetricRankingPortfolioCreator(ITargetPortfolioCreator):
         self, system_metrics, portfolio_max_positions, 
         entry_signals, target_positions, exit_signals
     ):
-        safe_f = 1.0 if system_metrics['metrics']['safe_F'] > 1.0 else system_metrics['metrics']['safe_F']
+        safe_f = 1.0 if system_metrics['metrics']['safe-f'] > 1.0 else system_metrics['metrics']['safe-f']
         free_pos_slots = int(portfolio_max_positions * safe_f) - \
             (len(target_positions) - len(exit_signals))
         if free_pos_slots > 0:
