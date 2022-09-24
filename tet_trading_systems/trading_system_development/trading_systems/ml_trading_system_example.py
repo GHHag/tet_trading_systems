@@ -284,7 +284,6 @@ def create_production_models(
 
     binary_models = serialize_models(models_dict)
     for symbol, model in binary_models.items():
-        #if not db.insert_ml_model(f'{system_name}_{symbol}', symbol, model):
         if not db.insert_ml_model(f'{system_name}', symbol, model):
             print(symbol)
             raise Exception('Something went wrong while inserting to or updating database.')
@@ -336,9 +335,8 @@ def preprocess_data(
 
 def get_example_ml_system_props(instruments_db: InstrumentsMongoDb, target_period=1):
     system_name = 'example_ml_system'
-    #symbols_list = ['SKF_B', 'VOLV_B']
-    symbols_list = ['VOLV_B']
-    system_name_symbol_suffix = False 
+    symbols_list = ['SKF_B', 'VOLV_B', 'NDA_SE', 'SCA_B']
+    system_name_symbol_suffix = False
     """ symbols_list = json.loads(
         instruments_db.get_market_list_instrument_symbols(
             instruments_db.get_market_list_id('omxs30')
@@ -351,7 +349,6 @@ def get_example_ml_system_props(instruments_db: InstrumentsMongoDb, target_perio
             symbols_list, '^OMX', price_data_get_req
         ),
         MlTradingSystemStateHandler,
-        #(system_name, system_name_symbol_suffix),
         (system_name, ),
         (
             ml_entry_regression, ml_exit_regression,
@@ -382,11 +379,8 @@ if __name__ == '__main__':
     model_data_dict = create_reg_models(df_dict, target_period=target_period)
     #model_data_dict = create_classification_models(df_dict, target_period=target_period)
 
-    #create_production_models(SYSTEMS_DB, model_data_dict, 'example_ml_system', {'target_period': target_period})
-    #create_production_models(ML_MODELS_DB, model_data_dict, 'example_ml_system', {'target_period': target_period})
     if not create_production_models(
         SYSTEMS_DB, df_dict, 'example_ml_system', target_period=target_period
-        #ML_MODELS_DB, df_dict, 'example_ml_system', target_period=target_period
     ):
         raise Exception('Failed to create model')
 
@@ -399,14 +393,3 @@ if __name__ == '__main__':
         plot_fig=False,
         systems_db=SYSTEMS_DB, client_db=SYSTEMS_DB, insert_into_db=True
     )
-    """ for symbol, dataframe in model_data_dict.items():
-        run_ext_pos_sizer_trading_system(
-            #{symbol: dataframe}, f'example_ml_system_{symbol}', 
-            {symbol: dataframe}, 'example_ml_system', 
-            ml_entry_regression, ml_exit_regression, 
-            ExtPositionSizer('sharpe_ratio'),
-            entry_args={'req_period_iters': target_period, 'entry_period_lookback': target_period}, 
-            exit_args={'exit_period_lookback'}, 
-            plot_fig=False,
-            systems_db=SYSTEMS_DB, client_db=SYSTEMS_DB, insert_into_db=True
-        ) """

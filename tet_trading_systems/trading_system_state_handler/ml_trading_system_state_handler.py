@@ -29,7 +29,10 @@ class MlTradingSystemStateHandler:
         self.__position_list: list[Position] = self.__systems_db.get_single_symbol_position_list(
             self.__system_name, self.__symbol
         )
+
+        # haemta safe-f från market_state dokument istaellet för systems dokument
         self.__system_metrics = json.loads(self.__systems_db.get_system_metrics(self.__system_name))
+
         self.__signal_handler = SignalHandler()
         if self.__model:
             self.__market_state_data = json.loads(
@@ -43,24 +46,6 @@ class MlTradingSystemStateHandler:
     def _generate_position_sequence(self, **kwargs):
         for pos in self.__position_list:
             yield pos
-
-    # gör funktionen generisk för att kunna anvanda olika typer av pos sizers och metrics
-    def _insert_system_metrics(self, system_metrics, num_testing_periods):
-        result = self.__systems_db.insert_system_metrics(
-            self.__system_name,
-            {
-                'sharpe_ratio': system_metrics[-1]['Sharpe ratio'],
-                'expectancy': system_metrics[-1]['Expectancy'],
-                'profit_factor': float(system_metrics[-1]['Profit factor']),
-                'CAR25': system_metrics[-1]['CAR25'],
-                'CAR75': system_metrics[-1]['CAR75'],
-                'safe-f': system_metrics[-1]['safe-f']
-            },
-            {
-                'num_of_periods': num_testing_periods
-            }
-        )
-        return result 
 
     # funktionen ska vara generisk och fungera med alla PositionSizer child-klasser? ersatter _run_monte_carlo_simulations isf?
     #def _calculate_system_metrics(self):
@@ -110,41 +95,43 @@ class MlTradingSystemStateHandler:
         if entry_logic_function(self.__df.iloc[-entry_args['entry_period_lookback']:], entry_args) and \
             self.__position_list[-1].exit_signal_dt and \
                 not self.__position_list[-1].exit_signal_dt == self.__df['Date'].iloc[-2]:
-            self.__signal_handler.handle_entry_signal(
-                self.__symbol, 
-                {
-                    'signal_index': len(self.__df), 
-                    'signal_dt': self.__df['Date'].iloc[-1], 
-                    'symbol': self.__symbol,
-                    self.__systems_db.METRICS_FIELD: 'entry'
-                }
-            )
             mask = (self.__df['Date'] > str(self.__position_list[0].entry_dt)) & \
                 (self.__df['Date'] <= str(self.__position_list[-1].exit_signal_dt))
             num_testing_periods = len(self.__df.loc[mask])
             avg_yearly_positions = int(len(self.__position_list) / (num_testing_periods / yearly_periods) + 0.5)
             position_manager = PositionManager(
+                # self.__system_metrics['metrics']['safe-f'] ska haemtas från market_state-dokument 
                 self.__symbol, num_testing_periods, capital, self.__system_metrics['metrics']['safe-f'],
                 asset_price_series=[float(close) for close in self.__df.loc[mask]['Close']]
             )
             position_manager.generate_positions(self._generate_position_sequence)
             position_manager.summarize_performance(plot_fig=plot_fig)
-            self.__signal_handler.add_pos_sizing_evaluation_data(
-                position_sizer(
-                    self.__position_list, num_testing_periods,
-                    forecast_data_fraction=(avg_yearly_positions / len(self.__position_list)) * years_to_forecast,
-                    capital=capital, num_of_sims=num_of_sims, symbol=self.__symbol,
-                    metrics_dict=position_manager.metrics.summary_data_dict
-                )
-            )
 
             mc_data = self._run_monte_carlo_simulations(
                 num_testing_periods, tolerated_pct_max_dd, dd_percentile_threshold,
                 avg_yearly_positions, years_to_forecast, 
                 capital=capital, num_of_sims=num_of_sims, **kwargs, plot_fig=plot_fig
             )
-            if insert_into_db:
-                self._insert_system_metrics(mc_data, num_testing_periods)
+            self.__signal_handler.handle_entry_signal(
+                self.__symbol, 
+                {
+                    'signal_index': len(self.__df), 
+                    'signal_dt': self.__df['Date'].iloc[-1], 
+                    'symbol': self.__symbol,
+                    self.__systems_db.MARKET_STATE_FIELD: 'entry',
+                    'CAR25': mc_data[-1]['CAR25'],
+                    'CAR75': mc_data[-1]['CAR75'],
+                    'safe-f': mc_data[-1]['safe-f']
+                }
+            )
+            self.__signal_handler.add_pos_sizing_evaluation_data(
+                position_sizer(
+                    self.__position_list, num_testing_periods,
+                    forecast_data_fraction=(avg_yearly_positions / len(self.__position_list)) * years_to_forecast,
+                    capital=capital, num_of_sims=num_of_sims, symbol=self.__symbol,
+                    metrics_dict=mc_data[-1]
+                )
+            )
             
             self.__position_list.pop(0)
             self.__position_list.append(Position(capital))
@@ -175,7 +162,7 @@ class MlTradingSystemStateHandler:
                     'symbol': self.__symbol, 
                     'periods_in_position': len(self.__position_list[-1].returns_list),
                     'unrealised_return': self.__position_list[-1].unrealised_return,
-                    self.__systems_db.METRICS_FIELD: 'active'
+                    self.__systems_db.MARKET_STATE_FIELD: 'active'
                 }
             )
             return True
@@ -194,7 +181,7 @@ class MlTradingSystemStateHandler:
                     'symbol': self.__symbol, 
                     'periods_in_position': len(self.__position_list[-1].returns_list),
                     'unrealised_return': self.__position_list[-1].unrealised_return,
-                    self.__systems_db.METRICS_FIELD: 'exit'
+                    self.__systems_db.MARKET_STATE_FIELD: 'exit'
                 }
             )
             print(f'\nExit signal, exit next open\nIndex {len(self.__df)}')
@@ -239,12 +226,12 @@ class MlTradingSystemStateHandler:
                         'exit': self.__systems_db.insert_market_state_data
                     }, self.__system_name
                 )
-            #result = self.__systems_db.insert_position_list(self.__system_name, self.__position_list)
-            result = self.__systems_db.insert_single_symbol_position_list(
-                self.__system_name, self.__symbol, self.__position_list, len(self.__df)
-            )
-            if not result:
-                print(
-                    'List of Position objects were not modified.\n' + 
-                    'Insert position list result: ' + str(result)
+
+                result = self.__systems_db.insert_single_symbol_position_list(
+                    self.__system_name, self.__symbol, self.__position_list, len(self.__df)
                 )
+                if not result:
+                    print(
+                        'List of Position objects were not modified.\n' + 
+                        'Insert position list result: ' + str(result)
+                    )
