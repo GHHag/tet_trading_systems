@@ -30,9 +30,6 @@ class MlTradingSystemStateHandler:
             self.__system_name, self.__symbol
         )
 
-        # haemta safe-f från market_state dokument istaellet för systems dokument
-        self.__system_metrics = json.loads(self.__systems_db.get_system_metrics(self.__system_name))
-
         self.__signal_handler = SignalHandler()
         if self.__model:
             self.__market_state_data = json.loads(
@@ -100,8 +97,7 @@ class MlTradingSystemStateHandler:
             num_testing_periods = len(self.__df.loc[mask])
             avg_yearly_positions = int(len(self.__position_list) / (num_testing_periods / yearly_periods) + 0.5)
             position_manager = PositionManager(
-                # self.__system_metrics['metrics']['safe-f'] ska haemtas från market_state-dokument 
-                self.__symbol, num_testing_periods, capital, self.__system_metrics['metrics']['safe-f'],
+                self.__symbol, num_testing_periods, capital, self.__market_state_data['safe-f'],
                 asset_price_series=[float(close) for close in self.__df.loc[mask]['Close']]
             )
             position_manager.generate_positions(self._generate_position_sequence)
