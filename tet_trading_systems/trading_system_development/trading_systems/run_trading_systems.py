@@ -9,6 +9,7 @@ def run_trading_system(
     entry_args, exit_args, *args, 
     capital=10000, capital_f=1.0,
     num_of_sims=2500, num_positions_forecasted=120, 
+    market_state_null_default=False,
     print_dataframe=False, plot_fig=False, write_to_file_path=None, 
     systems_db: ITetSystemsDocumentDatabase=None, 
     client_db: ITetSystemsDocumentDatabase=None, 
@@ -21,6 +22,7 @@ def run_trading_system(
     ts(
         capital=capital,
         capital_fraction=capital_f,
+        market_state_null_default=market_state_null_default,
         plot_performance_summary=plot_fig,
         save_summary_plot_to_path=None, 
         system_analysis_to_csv_path=None, 
@@ -60,6 +62,7 @@ def run_ext_pos_sizer_trading_system(
     capital=10000, capital_f=1.0, num_of_sims=2500, commission_pct_cost=0.0025,
     tolerated_pct_max_dd=15, dd_percentile_threshold=0.85, 
     years_to_forecast=2, avg_yearly_periods=251, 
+    market_state_null_default=False,
     print_dataframe=False, plot_fig=False, write_to_file_path=None, 
     systems_db: ITetSystemsDocumentDatabase=None, 
     client_db: ITetSystemsDocumentDatabase=None, 
@@ -79,6 +82,7 @@ def run_ext_pos_sizer_trading_system(
         ts(
             capital=capital,
             capital_fraction=capital_f,
+            market_state_null_default=market_state_null_default,
             plot_performance_summary=plot_fig,
             save_summary_plot_to_path=None, 
             system_analysis_to_csv_path=None, 

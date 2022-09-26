@@ -29,7 +29,6 @@ class MlTradingSystemStateHandler:
         self.__position_list: list[Position] = self.__systems_db.get_single_symbol_position_list(
             self.__system_name, self.__symbol
         )
-
         self.__signal_handler = SignalHandler()
         if self.__model:
             self.__market_state_data = json.loads(
@@ -85,18 +84,23 @@ class MlTradingSystemStateHandler:
 
     def _handle_enter_market_state(
         self, entry_logic_function, entry_args, position_sizer, 
-        tolerated_pct_max_dd, dd_percentile_threshold,
+        #tolerated_pct_max_dd, dd_percentile_threshold,
         capital=10000, num_of_sims=2500, yearly_periods=251, years_to_forecast=2, 
         insert_into_db=False, plot_fig=True, **kwargs
     ):
         if entry_logic_function(self.__df.iloc[-entry_args['entry_period_lookback']:], entry_args) and \
             self.__position_list[-1].exit_signal_dt and \
                 not self.__position_list[-1].exit_signal_dt == self.__df['Date'].iloc[-2]:
+            # create mask to filter self.__df where the 'Date' is between the first element of 
+            # self.__position_lists entry_dt and the last elements exit_signal_dt
             mask = (self.__df['Date'] > str(self.__position_list[0].entry_dt)) & \
                 (self.__df['Date'] <= str(self.__position_list[-1].exit_signal_dt))
+            # assign variable the length of the masked dataframe to hold the number of periods
             num_testing_periods = len(self.__df.loc[mask])
             avg_yearly_positions = int(len(self.__position_list) / (num_testing_periods / yearly_periods) + 0.5)
-            position_manager = PositionManager(
+            
+            # utkommenterat för SafeFPositionSizer test
+            """ position_manager = PositionManager(
                 self.__symbol, num_testing_periods, capital, self.__market_state_data['safe-f'],
                 asset_price_series=[float(close) for close in self.__df.loc[mask]['Close']]
             )
@@ -107,25 +111,28 @@ class MlTradingSystemStateHandler:
                 num_testing_periods, tolerated_pct_max_dd, dd_percentile_threshold,
                 avg_yearly_positions, years_to_forecast, 
                 capital=capital, num_of_sims=num_of_sims, **kwargs, plot_fig=plot_fig
-            )
+            ) """
             self.__signal_handler.handle_entry_signal(
                 self.__symbol, 
                 {
                     'signal_index': len(self.__df), 
                     'signal_dt': self.__df['Date'].iloc[-1], 
                     'symbol': self.__symbol,
-                    self.__systems_db.MARKET_STATE_FIELD: 'entry',
-                    'CAR25': mc_data[-1]['CAR25'],
-                    'CAR75': mc_data[-1]['CAR75'],
-                    'safe-f': mc_data[-1]['safe-f']
+                    self.__systems_db.MARKET_STATE_FIELD: 'entry'#,
+                    # field nedan inkluderas ej med SafeFPositionSizer
+                    #'CAR25': mc_data[-1]['CAR25'],
+                    #'CAR75': mc_data[-1]['CAR75'],
+                    #'safe-f': mc_data[-1]['safe-f']
                 }
             )
             self.__signal_handler.add_pos_sizing_evaluation_data(
                 position_sizer(
                     self.__position_list, num_testing_periods,
                     forecast_data_fraction=(avg_yearly_positions / len(self.__position_list)) * years_to_forecast,
-                    capital=capital, num_of_sims=num_of_sims, symbol=self.__symbol,
-                    metrics_dict=mc_data[-1]
+                    #forecast_data_fraction=(avg_yearly_positions * years_to_forecast) / (avg_yearly_positions * (years_to_forecast + 1)),
+                    capital=capital, num_of_sims=num_of_sims, symbol=self.__symbol#,
+                    #metrics_dict=mc_data[-1]
+                    #metrics_dict=position_manager.metrics.summary_data_dict
                 )
             )
             
