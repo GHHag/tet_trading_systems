@@ -18,13 +18,15 @@ from tet_doc_db.tet_mongo_db.systems_mongo_db import TetSystemsMongoDb
 from tet_doc_db.instruments_mongo_db.instruments_mongo_db import InstrumentsMongoDb
 
 from TETrading.position.position_sizer.ext_position_sizer import ExtPositionSizer
+from TETrading.position.position_sizer.safe_f_position_sizer import SafeFPositionSizer
 
 from trading_system_properties.ml_trading_system_properties import MlTradingSystemProperties
 
 from tet_trading_systems.trading_system_state_handler.ml_trading_system_state_handler import MlTradingSystemStateHandler 
 
 from tet_trading_systems.trading_system_development.ml_utils.ml_system_utils import serialize_models
-from tet_trading_systems.trading_system_development.trading_systems.run_trading_systems import run_ext_pos_sizer_trading_system
+from tet_trading_systems.trading_system_development.trading_systems.run_trading_systems \
+    import run_ext_pos_sizer_trading_system, run_trading_system
 
 
 def ml_entry_classification(df, *args, entry_args=None):
@@ -284,7 +286,7 @@ def create_production_models(
 
     binary_models = serialize_models(models_dict)
     for symbol, model in binary_models.items():
-        if not db.insert_ml_model(f'{system_name}', symbol, model):
+        if not db.insert_ml_model(system_name, symbol, model):
             print(symbol)
             raise Exception('Something went wrong while inserting to or updating database.')
     return True
@@ -336,7 +338,6 @@ def preprocess_data(
 def get_example_ml_system_props(instruments_db: InstrumentsMongoDb, target_period=1):
     system_name = 'example_ml_system'
     symbols_list = ['SKF_B', 'VOLV_B', 'NDA_SE', 'SCA_B']
-    system_name_symbol_suffix = False
     """ symbols_list = json.loads(
         instruments_db.get_market_list_instrument_symbols(
             instruments_db.get_market_list_id('omxs30')
@@ -352,7 +353,8 @@ def get_example_ml_system_props(instruments_db: InstrumentsMongoDb, target_perio
         (system_name, ),
         (
             ml_entry_regression, ml_exit_regression,
-            ExtPositionSizer('sharpe_ratio'),
+            #ExtPositionSizer('sharpe_ratio'),
+            SafeFPositionSizer('sharpe_ratio', 15, 0.85),
             {'req_period_iters': target_period, 'entry_period_lookback': target_period},
             {'exit_period_lookback': target_period}
         ),
@@ -384,12 +386,15 @@ if __name__ == '__main__':
     ):
         raise Exception('Failed to create model')
 
-    run_ext_pos_sizer_trading_system(
+    #run_ext_pos_sizer_trading_system(
+    run_trading_system(
         model_data_dict, 'example_ml_system', 
         ml_entry_regression, ml_exit_regression, 
-        ExtPositionSizer('sharpe_ratio'),
-        entry_args={'req_period_iters': target_period, 'entry_period_lookback': target_period}, 
-        exit_args={'exit_period_lookback'}, 
+        #ExtPositionSizer('sharpe_ratio'),
+        SafeFPositionSizer('sharpe_ratio', 15, 0.85),
+        {'req_period_iters': target_period, 'entry_period_lookback': target_period}, 
+        {'exit_period_lookback'}, 
+        market_state_null_default=True,
         plot_fig=False,
         systems_db=SYSTEMS_DB, client_db=SYSTEMS_DB, insert_into_db=True
     )
