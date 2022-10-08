@@ -14,7 +14,6 @@ from tet_doc_db.tet_mongo_db.systems_mongo_db import TetSystemsMongoDb
 
 
 class MlTradingSystemStateHandler:
-    
 
     def __init__(
         self, system_name, symbol, db: TetSystemsMongoDb, df: pd.DataFrame,  
@@ -47,7 +46,7 @@ class MlTradingSystemStateHandler:
     #def _calculate_system_metrics(self):
     #    pass
 
-    def _run_monte_carlo_simulations( # denna function borde ligga i separat modul och endast köras för sarskilda pos_sizer objekt
+    """ def _run_monte_carlo_simulations( # denna function borde ligga i separat modul och endast köras för sarskilda pos_sizer objekt
         self, num_testing_periods, tolerated_pct_max_dd, dd_percentile_threshold,
         avg_yearly_positions, years_to_forecast,
         capital=10000, num_of_sims=2500, print_dataframe=False, plot_fig=False,
@@ -68,7 +67,7 @@ class MlTradingSystemStateHandler:
                     print_dataframe=print_dataframe, plot_fig=plot_fig
                 )
                 mc_data[-1]['safe-f'] = capital_f
-                return mc_data
+                return mc_data """
 
     def _handle_entry_signal(self):
         if self.__market_state_data['market_state'] == 'entry' and \
@@ -100,14 +99,14 @@ class MlTradingSystemStateHandler:
             avg_yearly_positions = int(len(self.__position_list) / (num_testing_periods / yearly_periods) + 0.5)
             
             # utkommenterat för SafeFPositionSizer test
-            """ position_manager = PositionManager(
+            position_manager = PositionManager(
                 self.__symbol, num_testing_periods, capital, self.__market_state_data['safe-f'],
                 asset_price_series=[float(close) for close in self.__df.loc[mask]['Close']]
             )
             position_manager.generate_positions(self._generate_position_sequence)
             position_manager.summarize_performance(plot_fig=plot_fig)
 
-            mc_data = self._run_monte_carlo_simulations(
+            """mc_data = self._run_monte_carlo_simulations(
                 num_testing_periods, tolerated_pct_max_dd, dd_percentile_threshold,
                 avg_yearly_positions, years_to_forecast, 
                 capital=capital, num_of_sims=num_of_sims, **kwargs, plot_fig=plot_fig
@@ -128,11 +127,13 @@ class MlTradingSystemStateHandler:
             self.__signal_handler.add_pos_sizing_evaluation_data(
                 position_sizer(
                     self.__position_list, num_testing_periods,
-                    forecast_data_fraction=(avg_yearly_positions / len(self.__position_list)) * years_to_forecast,
-                    #forecast_data_fraction=(avg_yearly_positions * years_to_forecast) / (avg_yearly_positions * (years_to_forecast + 1)),
-                    capital=capital, num_of_sims=num_of_sims, symbol=self.__symbol#,
+                    forecast_positions=avg_yearly_positions * (years_to_forecast + 1),
+                    #forecast_data_fraction=(avg_yearly_positions / len(self.__position_list)) * years_to_forecast,
+                    forecast_data_fraction=(avg_yearly_positions * years_to_forecast) / 
+                                            (avg_yearly_positions * (years_to_forecast + 1)),
+                    capital=capital, num_of_sims=num_of_sims, symbol=self.__symbol,
                     #metrics_dict=mc_data[-1]
-                    #metrics_dict=position_manager.metrics.summary_data_dict
+                    metrics_dict=position_manager.metrics.summary_data_dict
                 )
             )
             
@@ -215,7 +216,7 @@ class MlTradingSystemStateHandler:
             else:
                 self._handle_enter_market_state(
                     entry_logic_function, entry_args, position_sizer,
-                    tolerated_pct_max_dd, dd_percentile_threshold,
+                    #tolerated_pct_max_dd, dd_percentile_threshold,
                     capital=capital, yearly_periods=avg_yearly_periods, years_to_forecast=years_to_forecast, 
                     insert_into_db=insert_into_db, plot_fig=plot_fig
                 )
