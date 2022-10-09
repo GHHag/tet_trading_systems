@@ -16,10 +16,63 @@ def run_trading_system(
     insert_into_db=False,
     save_best_estimate_trades_path=None
 ):
-    signal_handler_data = None
+    ts = TradingSystem(
+        system_name, data_dict, entry_func, exit_func, pos_sizer
+    )
+    ts(
+        capital=capital,
+        capital_fraction=capital_f,
+        market_state_null_default=market_state_null_default,
+        plot_performance_summary=plot_fig,
+        save_summary_plot_to_path=None, 
+        system_analysis_to_csv_path=None, 
+        plot_returns_distribution=False,
+        save_returns_distribution_plot_to_path=None, 
+        run_monte_carlo_sims=False,
+        num_of_monte_carlo_sims=num_of_sims,
+        monte_carlo_data_amount=0.65,
+        plot_monte_carlo=plot_fig,
+        print_monte_carlo_df=False,
+        monte_carlo_analysis_to_csv_path=None, 
+        commission_pct_cost=0.0025,
+        entry_args=entry_args,
+        exit_args=exit_args,
+        fixed_position_size=True,
+        generate_signals=True,
+        plot_positions=False,
+        save_position_figs_path=None,
+        write_signals_to_file_path=write_to_file_path,
+        insert_data_to_db_bool=insert_into_db,
+        signal_handler_db_insert_funcs=
+        {
+            'entry': client_db.insert_market_state_data,
+            'active': client_db.insert_market_state_data,
+            'exit': client_db.insert_market_state_data
+        },
+        single_symbol_pos_list_db_insert_func=systems_db.insert_single_symbol_position_list,
+        json_format_single_symbol_pos_list_db_insert_func=client_db.insert_single_symbol_position_list,
+        full_pos_list_db_insert_func=systems_db.insert_position_list,
+        json_format_full_pos_list_db_insert_func=client_db.insert_position_list,
+        full_pos_list_slice_param=num_positions_forecasted
+    )
+
+
+def run_multiple_run_req_pos_sizer_trading_system(
+    data_dict, system_name, entry_func, exit_func, pos_sizer,
+    entry_args, exit_args, *args, 
+    capital=10000, capital_f=1.0,
+    num_of_sims=2500, num_positions_forecasted=120, 
+    market_state_null_default=False,
+    print_dataframe=False, plot_fig=False, write_to_file_path=None, 
+    systems_db: ITetSystemsDocumentDatabase=None, 
+    client_db: ITetSystemsDocumentDatabase=None, 
+    insert_into_db=False,
+    save_best_estimate_trades_path=None
+):
+    position_sizer_dict = None
     for ts_run in range(2):
-        if signal_handler_data is not None:
-            capital_f = signal_handler_data
+        if position_sizer_dict is not None:
+            capital_f = position_sizer_dict 
 
         if ts_run < 1:
             db_insert_bool = False
@@ -52,7 +105,6 @@ def run_trading_system(
             plot_positions=False,
             save_position_figs_path=None,
             write_signals_to_file_path=write_to_file_path,
-            #insert_data_to_db_bool=insert_into_db,
             insert_data_to_db_bool=db_insert_bool,
             signal_handler_db_insert_funcs=
             {
@@ -66,7 +118,7 @@ def run_trading_system(
             json_format_full_pos_list_db_insert_func=client_db.insert_position_list,
             full_pos_list_slice_param=num_positions_forecasted
         )
-        signal_handler_data = ts.signal_handler_data
+        position_sizer_dict = ts.position_sizer_dict
 
 
 def run_ext_pos_sizer_trading_system(
