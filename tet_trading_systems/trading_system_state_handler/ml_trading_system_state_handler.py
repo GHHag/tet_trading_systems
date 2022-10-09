@@ -131,6 +131,7 @@ class MlTradingSystemStateHandler:
                     #forecast_data_fraction=(avg_yearly_positions / len(self.__position_list)) * years_to_forecast,
                     forecast_data_fraction=(avg_yearly_positions * years_to_forecast) / 
                                             (avg_yearly_positions * (years_to_forecast + 1)),
+                    persistant_safe_f=self.__market_state_data['safe-f'],
                     capital=capital, num_of_sims=num_of_sims, symbol=self.__symbol,
                     #metrics_dict=mc_data[-1]
                     metrics_dict=position_manager.metrics.summary_data_dict
