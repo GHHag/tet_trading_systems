@@ -3,6 +3,8 @@ from typing import Union
 
 from bson import json_util
 
+from TETrading.utils.metadata.market_state_enum import MarketState
+
 from tet_doc_db.doc_database_meta_classes.tet_systems_doc_db import ITetSystemsDocumentDatabase
 from tet_doc_db.doc_database_meta_classes.tet_portfolio_doc_db import ITetPortfolioDocumentDatabase
 
@@ -28,7 +30,7 @@ class Portfolio:
         self.__portfolio_db = portfolio_db
         self.__system_metrics = json.loads(self.__portfolio_db.get_system_metrics(self.__system_name))
         self.__entry_signals = json.loads(
-            self.__client_db.get_market_state_data(self.__system_name, 'entry'), 
+            self.__client_db.get_market_state_data(self.__system_name, MarketState.ENTRY.value), 
             object_hook=json_util.object_hook
         )
         # skapa dataklass PortfolioData med property funcs för members        
@@ -45,7 +47,7 @@ class Portfolio:
             object_hook=json_util.object_hook
         )
         self.__exit_signals = json.loads(
-            self.__client_db.get_market_state_data(self.__system_name, 'exit'),
+            self.__client_db.get_market_state_data(self.__system_name, MarketState.EXIT.value),
             object_hook=json_util.object_hook
         )
 

@@ -1,5 +1,6 @@
 from tet_doc_db.doc_database_meta_classes.tet_systems_doc_db import ITetSystemsDocumentDatabase
 
+from TETrading.utils.metadata.market_state_enum import MarketState
 from TETrading.trading_system.trading_system import TradingSystem
 from TETrading.utils.monte_carlo_functions import calculate_safe_f
 
@@ -45,9 +46,9 @@ def run_trading_system(
         insert_data_to_db_bool=insert_into_db,
         signal_handler_db_insert_funcs=
         {
-            'entry': client_db.insert_market_state_data,
-            'active': client_db.insert_market_state_data,
-            'exit': client_db.insert_market_state_data
+            MarketState.ENTRY.value: client_db.insert_market_state_data,
+            MarketState.ACTIVE.value: client_db.insert_market_state_data,
+            MarketState.EXIT.value: client_db.insert_market_state_data
         },
         single_symbol_pos_list_db_insert_func=systems_db.insert_single_symbol_position_list,
         json_format_single_symbol_pos_list_db_insert_func=client_db.insert_single_symbol_position_list,
@@ -108,9 +109,9 @@ def run_multiple_run_req_pos_sizer_trading_system(
             insert_data_to_db_bool=db_insert_bool,
             signal_handler_db_insert_funcs=
             {
-                'entry': client_db.insert_market_state_data,
-                'active': client_db.insert_market_state_data,
-                'exit': client_db.insert_market_state_data
+                MarketState.ENTRY.value: client_db.insert_market_state_data,
+                MarketState.ACTIVE.value: client_db.insert_market_state_data,
+                MarketState.EXIT.value: client_db.insert_market_state_data
             },
             single_symbol_pos_list_db_insert_func=systems_db.insert_single_symbol_position_list,
             json_format_single_symbol_pos_list_db_insert_func=client_db.insert_single_symbol_position_list,
@@ -169,9 +170,9 @@ def run_ext_pos_sizer_trading_system(
             insert_data_to_db_bool=db_insert_bool,
             signal_handler_db_insert_funcs=
             {
-                'entry': client_db.insert_market_state_data,
-                'active': client_db.insert_market_state_data,
-                'exit': client_db.insert_market_state_data
+                MarketState.ENTRY.value: client_db.insert_market_state_data,
+                MarketState.ACTIVE.value: client_db.insert_market_state_data,
+                MarketState.EXIT.value: client_db.insert_market_state_data
             },
             single_symbol_pos_list_db_insert_func=systems_db.insert_single_symbol_position_list,
             json_format_single_symbol_pos_list_db_insert_func=client_db.insert_single_symbol_position_list,
@@ -209,6 +210,7 @@ def run_ext_pos_sizer_trading_system(
                         'CAR25': mc_data[-1]['CAR25'],
                         'CAR75': mc_data[-1]['CAR75'],
                         'safe-f': capital_f
+                        #pos_sizer.position_size_metric_str: capital_f
                     },
                     {
                         'num_of_periods': num_of_periods
