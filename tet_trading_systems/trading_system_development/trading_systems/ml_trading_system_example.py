@@ -163,7 +163,7 @@ def create_classification_models(
                 'Open', 'High', 'Low', 'Close', 'Pct_chg', 'Date',
                 'Open_benchmark', 'High_benchmark', 'Low_benchmark', 'Close_benchmark',
                 'Volume_benchmark', 'symbol', 'symbol_benchmark',
-                'Target', 'Return_shifted'
+                'Target'
             ], 
             axis=1, inplace=True
         )
@@ -241,13 +241,13 @@ def create_production_models(
     models_dict = {}
     for symbol, df in df_dict.items():
         # regression model target
-        df['Target'] = \
-            df[target_col].pct_change(periods=target_period).shift(-target_period).mul(100)
+        #df['Target'] = \
+        #    df[target_col].pct_change(periods=target_period).shift(-target_period).mul(100)
         # classification model target
-        #df['Target_col_shifted'] = \
-        #    df['Close'].pct_change(periods=target_period).shift(-target_period).mul(100)
-        #df['Target'] = df['Target_col_shifted'] > 0
-        #df.drop(columns=['Target_col_shifted'], inplace=True)
+        df['Target_col_shifted'] = \
+            df[target_col].pct_change(periods=target_period).shift(-target_period).mul(100)
+        df['Target'] = df['Target_col_shifted'] > 0
+        df.drop(columns=['Target_col_shifted'], inplace=True)
         df.dropna(inplace=True)
 
         # assign target column/feature
@@ -271,9 +271,13 @@ def create_production_models(
         y = y_df.to_numpy()
 
         try:
-            steps = [
+            """ steps = [
                 ('scaler', StandardScaler()),
                 ('linreg', LinearRegression())
+            ] """
+            steps = [
+                ('scaler', StandardScaler()),
+                ('dt', DecisionTreeClassifier())
             ]
             model = Pipeline(steps)
             model.fit(X, y)
@@ -352,7 +356,8 @@ def get_example_ml_system_props(instruments_db: InstrumentsMongoDb, target_perio
         MlTradingSystemStateHandler,
         (system_name, ),
         (
-            ml_entry_regression, ml_exit_regression,
+            #ml_entry_regression, ml_exit_regression,
+            ml_entry_classification, ml_exit_classification,
             SafeFPositionSizer('sharpe_ratio', 15, 0.85),
             {'req_period_iters': target_period, 'entry_period_lookback': target_period},
             {'exit_period_lookback': target_period}
@@ -377,8 +382,8 @@ if __name__ == '__main__':
         target_period=target_period
     )
 
-    model_data_dict = create_reg_models(df_dict, target_period=target_period)
-    #model_data_dict = create_classification_models(df_dict, target_period=target_period)
+    #model_data_dict = create_reg_models(df_dict, target_period=target_period)
+    model_data_dict = create_classification_models(df_dict, target_period=target_period)
 
     if not create_production_models(
         SYSTEMS_DB, df_dict, 'example_ml_system', target_period=target_period
@@ -387,7 +392,8 @@ if __name__ == '__main__':
 
     run_multiple_run_req_pos_sizer_trading_system(
         model_data_dict, 'example_ml_system', 
-        ml_entry_regression, ml_exit_regression, 
+        #ml_entry_regression, ml_exit_regression, 
+        ml_entry_classification, ml_exit_classification, 
         SafeFPositionSizer('sharpe_ratio', 15, 0.85),
         {'req_period_iters': target_period, 'entry_period_lookback': target_period}, 
         {'exit_period_lookback'}, 

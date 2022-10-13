@@ -45,8 +45,8 @@ class MlTradingSystemStateHandler:
             yield pos
 
     def _handle_entry_signal(self):
-        if self.__market_state_data[MarketState.MARKET_STATE.value] == MarketState.ENTRY.value and \
-            self.__df['Date'].iloc[-2] == pd.Timestamp(self.__market_state_data[TradingSystemAttributes.SIGNAL_DT.value]) and \
+        if self.__market_state_data[TradingSystemAttributes.MARKET_STATE] == MarketState.ENTRY.value and \
+            self.__df['Date'].iloc[-2] == pd.Timestamp(self.__market_state_data[TradingSystemAttributes.SIGNAL_DT]) and \
                 not self.__position_list[-1].active_position:
             self.__position_list[-1].enter_market(
                 self.__df['Open'].iloc[-1], 'long', self.__df['Date'].iloc[-1]
@@ -85,10 +85,10 @@ class MlTradingSystemStateHandler:
             self.__signal_handler.handle_entry_signal(
                 self.__symbol, 
                 {
-                    TradingSystemAttributes.SIGNAL_INDEX.value: len(self.__df), 
-                    TradingSystemAttributes.SIGNAL_DT.value: self.__df['Date'].iloc[-1], 
-                    TradingSystemAttributes.SYMBOL.value: self.__symbol,
-                    TradingSystemAttributes.DIRECTION.value: direction,
+                    TradingSystemAttributes.SIGNAL_INDEX: len(self.__df), 
+                    TradingSystemAttributes.SIGNAL_DT: self.__df['Date'].iloc[-1], 
+                    TradingSystemAttributes.SYMBOL: self.__symbol,
+                    TradingSystemAttributes.DIRECTION: direction,
                     self.__systems_db.MARKET_STATE_FIELD: MarketState.ENTRY.value
                 }
             )
@@ -109,14 +109,14 @@ class MlTradingSystemStateHandler:
             print(f'\nEntry signal, buy next open\nIndex {len(self.__df)}')
 
     def _handle_active_pos_state(self):
-        if self.__df['Date'].iloc[-1] != pd.Timestamp(self.__market_state_data[TradingSystemAttributes.SIGNAL_DT.value]):
+        if self.__df['Date'].iloc[-1] != pd.Timestamp(self.__market_state_data[TradingSystemAttributes.SIGNAL_DT]):
             self.__position_list[-1].update(Decimal(self.__df['Close'].iloc[-1]))
         self.__position_list[-1].print_position_stats()
 
-        if self.__market_state_data[MarketState.MARKET_STATE.value] == MarketState.EXIT.value and \
-            self.__df['Date'].iloc[-2] == pd.Timestamp(self.__market_state_data[TradingSystemAttributes.SIGNAL_DT.value]):
+        if self.__market_state_data[TradingSystemAttributes.MARKET_STATE] == MarketState.EXIT.value and \
+            self.__df['Date'].iloc[-2] == pd.Timestamp(self.__market_state_data[TradingSystemAttributes.SIGNAL_DT]):
             self.__position_list[-1].exit_market(
-                self.__df['Open'].iloc[-1], self.__market_state_data[TradingSystemAttributes.SIGNAL_DT.value]
+                self.__df['Open'].iloc[-1], self.__market_state_data[TradingSystemAttributes.SIGNAL_DT]
             ) 
             print(
                 f'Exit index {len(self.__df)}: {format(self.__df["Open"].iloc[-1], ".3f")}, ' + 
@@ -128,12 +128,12 @@ class MlTradingSystemStateHandler:
             self.__signal_handler.handle_active_position(
                 self.__symbol, 
                 {
-                    TradingSystemAttributes.SIGNAL_INDEX.value: len(self.__df), 
-                    TradingSystemAttributes.SIGNAL_DT.value: self.__df['Date'].iloc[-1], 
-                    TradingSystemAttributes.SYMBOL.value: self.__symbol, 
-                    TradingSystemAttributes.PERIODS_IN_POSITION.value: 
+                    TradingSystemAttributes.SIGNAL_INDEX: len(self.__df), 
+                    TradingSystemAttributes.SIGNAL_DT: self.__df['Date'].iloc[-1], 
+                    TradingSystemAttributes.SYMBOL: self.__symbol, 
+                    TradingSystemAttributes.PERIODS_IN_POSITION: 
                         len(self.__position_list[-1].returns_list),
-                    TradingSystemAttributes.UNREALISED_RETURN.value: 
+                    TradingSystemAttributes.UNREALISED_RETURN: 
                         self.__position_list[-1].unrealised_return,
                     self.__systems_db.MARKET_STATE_FIELD: MarketState.ACTIVE.value 
                 }
@@ -149,12 +149,12 @@ class MlTradingSystemStateHandler:
             self.__signal_handler.handle_exit_signal(
                 self.__symbol,
                 {
-                    TradingSystemAttributes.SIGNAL_INDEX.value: len(self.__df), 
-                    TradingSystemAttributes.SIGNAL_DT.value: self.__df['Date'].iloc[-1],
-                    TradingSystemAttributes.SYMBOL.value: self.__symbol, 
-                    TradingSystemAttributes.PERIODS_IN_POSITION.value: 
+                    TradingSystemAttributes.SIGNAL_INDEX: len(self.__df), 
+                    TradingSystemAttributes.SIGNAL_DT: self.__df['Date'].iloc[-1],
+                    TradingSystemAttributes.SYMBOL: self.__symbol, 
+                    TradingSystemAttributes.PERIODS_IN_POSITION: 
                         len(self.__position_list[-1].returns_list),
-                    TradingSystemAttributes.UNREALISED_RETURN.value: 
+                    TradingSystemAttributes.UNREALISED_RETURN: 
                         self.__position_list[-1].unrealised_return,
                     self.__systems_db.MARKET_STATE_FIELD: MarketState.EXIT.value 
                 }
@@ -178,7 +178,7 @@ class MlTradingSystemStateHandler:
             not 'exit_period_lookback' in exit_args.keys():
             raise Exception("Given parameter for 'entry_args' or 'exit_args' is missing required key(s).")
 
-        if self.__df['Date'].iloc[-1] != pd.Timestamp(self.__market_state_data[TradingSystemAttributes.SIGNAL_DT.value]):
+        if self.__df['Date'].iloc[-1] != pd.Timestamp(self.__market_state_data[TradingSystemAttributes.SIGNAL_DT]):
             self._handle_entry_signal()
             latest_data_point = self.__df.iloc[-1].copy()
             latest_data_point['pred'] = self.__model.predict(pred_features[-1].reshape(1, -1))[0]
@@ -201,7 +201,7 @@ class MlTradingSystemStateHandler:
                     insert_into_db=insert_into_db, plot_fig=plot_fig
                 )
 
-            print(self.__signal_handler)            
+            print(self.__signal_handler)
             if insert_into_db:
                 self.__signal_handler.insert_into_db(
                     {
