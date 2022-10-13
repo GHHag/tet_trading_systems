@@ -30,6 +30,7 @@ class MlTradingSystemStateHandler:
         self.__position_list: list[Position] = self.__systems_db.get_single_symbol_position_list(
             self.__system_name, self.__symbol
         )
+
         self.__signal_handler = SignalHandler()
         if self.__model:
             self.__market_state_data = json.loads(
@@ -39,6 +40,17 @@ class MlTradingSystemStateHandler:
             )
         else:
             raise Exception("Something went wrong while getting the model from database.")
+
+        if self.__position_list[-1].exit_signal_dt:    
+            mask = (self.__df['Date'] > str(self.__position_list[0].entry_dt)) & \
+                (self.__df['Date'] <= str(self.__position_list[-1].exit_signal_dt))
+            self.__num_testing_periods = len(self.__df.loc[mask])
+        else:
+            mask = (self.__df['Date'] > str(self.__position_list[0].entry_dt)) & \
+                (self.__df['Date'] <= str(self.__position_list[-2].exit_signal_dt))
+            periods_in_position = self.__market_state_data[TradingSystemAttributes.PERIODS_IN_POSITION] \
+                if TradingSystemAttributes.PERIODS_IN_POSITION in self.__market_state_data else 1
+            self.__num_testing_periods = len(self.__df.loc[mask]) + periods_in_position 
 
     def _generate_position_sequence(self, **kwargs):
         for pos in self.__position_list:
@@ -64,18 +76,16 @@ class MlTradingSystemStateHandler:
         entry_signal, direction = entry_logic_function(
             self.__df.iloc[-entry_args['entry_period_lookback']:], entry_args
         )
-        if entry_signal and self.__position_list[-1].exit_signal_dt and \
+        if entry_signal and not self.__position_list[-1].active_position and \
             not self.__position_list[-1].exit_signal_dt == self.__df['Date'].iloc[-2]:
             # create mask to filter self.__df where the 'Date' is between the first element of 
             # self.__position_lists entry_dt and the last elements exit_signal_dt
             mask = (self.__df['Date'] > str(self.__position_list[0].entry_dt)) & \
                 (self.__df['Date'] <= str(self.__position_list[-1].exit_signal_dt))
-            # assign variable the length of the masked dataframe to hold the number of periods
-            num_testing_periods = len(self.__df.loc[mask])
-            avg_yearly_positions = int(len(self.__position_list) / (num_testing_periods / yearly_periods) + 0.5)
+            avg_yearly_positions = int(len(self.__position_list) / (self.__num_testing_periods / yearly_periods) + 0.5)
             
             position_manager = PositionManager(
-                self.__symbol, num_testing_periods, capital, 
+                self.__symbol, self.__num_testing_periods, capital, 
                 self.__market_state_data[position_sizer.position_size_metric_str],
                 asset_price_series=[float(close) for close in self.__df.loc[mask]['Close']]
             )
@@ -94,7 +104,7 @@ class MlTradingSystemStateHandler:
             )
             self.__signal_handler.add_pos_sizing_evaluation_data(
                 position_sizer(
-                    self.__position_list, num_testing_periods,
+                    self.__position_list, self.__num_testing_periods,
                     forecast_positions=avg_yearly_positions * (years_to_forecast + 1),
                     forecast_data_fraction=(avg_yearly_positions * years_to_forecast) / 
                                             (avg_yearly_positions * (years_to_forecast + 1)),
@@ -116,7 +126,7 @@ class MlTradingSystemStateHandler:
         if self.__market_state_data[TradingSystemAttributes.MARKET_STATE] == MarketState.EXIT.value and \
             self.__df['Date'].iloc[-2] == pd.Timestamp(self.__market_state_data[TradingSystemAttributes.SIGNAL_DT]):
             self.__position_list[-1].exit_market(
-                self.__df['Open'].iloc[-1], self.__market_state_data[TradingSystemAttributes.SIGNAL_DT]
+                self.__df['Open'].iloc[-1], pd.Timestamp(self.__market_state_data[TradingSystemAttributes.SIGNAL_DT])
             ) 
             print(
                 f'Exit index {len(self.__df)}: {format(self.__df["Open"].iloc[-1], ".3f")}, ' + 
@@ -131,10 +141,8 @@ class MlTradingSystemStateHandler:
                     TradingSystemAttributes.SIGNAL_INDEX: len(self.__df), 
                     TradingSystemAttributes.SIGNAL_DT: self.__df['Date'].iloc[-1], 
                     TradingSystemAttributes.SYMBOL: self.__symbol, 
-                    TradingSystemAttributes.PERIODS_IN_POSITION: 
-                        len(self.__position_list[-1].returns_list),
-                    TradingSystemAttributes.UNREALISED_RETURN: 
-                        self.__position_list[-1].unrealised_return,
+                    TradingSystemAttributes.PERIODS_IN_POSITION: len(self.__position_list[-1].returns_list),
+                    TradingSystemAttributes.UNREALISED_RETURN: self.__position_list[-1].unrealised_return,
                     self.__systems_db.MARKET_STATE_FIELD: MarketState.ACTIVE.value 
                 }
             )
@@ -152,10 +160,8 @@ class MlTradingSystemStateHandler:
                     TradingSystemAttributes.SIGNAL_INDEX: len(self.__df), 
                     TradingSystemAttributes.SIGNAL_DT: self.__df['Date'].iloc[-1],
                     TradingSystemAttributes.SYMBOL: self.__symbol, 
-                    TradingSystemAttributes.PERIODS_IN_POSITION: 
-                        len(self.__position_list[-1].returns_list),
-                    TradingSystemAttributes.UNREALISED_RETURN: 
-                        self.__position_list[-1].unrealised_return,
+                    TradingSystemAttributes.PERIODS_IN_POSITION: len(self.__position_list[-1].returns_list),
+                    TradingSystemAttributes.UNREALISED_RETURN: self.__position_list[-1].unrealised_return,
                     self.__systems_db.MARKET_STATE_FIELD: MarketState.EXIT.value 
                 }
             )
@@ -183,15 +189,16 @@ class MlTradingSystemStateHandler:
             latest_data_point = self.__df.iloc[-1].copy()
             latest_data_point['pred'] = self.__model.predict(pred_features[-1].reshape(1, -1))[0]
             self.__df = self.__df.iloc[:-1].append(latest_data_point, ignore_index=True)
-
+           
             if isinstance(self.__position_list[-1], Position) and self.__position_list[-1].active_position:
                 active_pos = self._handle_active_pos_state()
                 if active_pos:
                     self._handle_exit_market_state(exit_logic_function, exit_args)
                 else:
                     if insert_into_db:
+                        # Position objects in json format will be inserted to database after being exited
                         self.__systems_db.insert_single_symbol_position_list(
-                            self.__system_name, self.__symbol, self.__position_list, len(self.__df),
+                            self.__system_name, self.__symbol, self.__position_list, self.__num_testing_periods,
                             format='json'
                         )
             else:
@@ -212,7 +219,7 @@ class MlTradingSystemStateHandler:
                 )
 
                 result = self.__systems_db.insert_single_symbol_position_list(
-                    self.__system_name, self.__symbol, self.__position_list, len(self.__df)
+                    self.__system_name, self.__symbol, self.__position_list, self.__num_testing_periods
                 )
 
                 if not result:
