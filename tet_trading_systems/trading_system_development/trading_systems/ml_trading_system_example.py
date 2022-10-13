@@ -17,7 +17,6 @@ from securities_db_py_dal.dal import price_data_get_req
 from tet_doc_db.tet_mongo_db.systems_mongo_db import TetSystemsMongoDb
 from tet_doc_db.instruments_mongo_db.instruments_mongo_db import InstrumentsMongoDb
 
-from TETrading.position.position_sizer.ext_position_sizer import ExtPositionSizer
 from TETrading.position.position_sizer.safe_f_position_sizer import SafeFPositionSizer
 
 from trading_system_properties.ml_trading_system_properties import MlTradingSystemProperties
