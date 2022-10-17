@@ -99,7 +99,7 @@ class MlTradingSystemStateHandler:
                     TradingSystemAttributes.SIGNAL_DT: self.__df['Date'].iloc[-1], 
                     TradingSystemAttributes.SYMBOL: self.__symbol,
                     TradingSystemAttributes.DIRECTION: direction,
-                    self.__systems_db.MARKET_STATE_FIELD: MarketState.ENTRY.value
+                    TradingSystemAttributes.MARKET_STATE: MarketState.ENTRY.value
                 }
             )
             self.__signal_handler.add_pos_sizing_evaluation_data(
@@ -143,7 +143,7 @@ class MlTradingSystemStateHandler:
                     TradingSystemAttributes.SYMBOL: self.__symbol, 
                     TradingSystemAttributes.PERIODS_IN_POSITION: len(self.__position_list[-1].returns_list),
                     TradingSystemAttributes.UNREALISED_RETURN: self.__position_list[-1].unrealised_return,
-                    self.__systems_db.MARKET_STATE_FIELD: MarketState.ACTIVE.value 
+                    TradingSystemAttributes.MARKET_STATE: MarketState.ACTIVE.value 
                 }
             )
             return True
@@ -162,7 +162,7 @@ class MlTradingSystemStateHandler:
                     TradingSystemAttributes.SYMBOL: self.__symbol, 
                     TradingSystemAttributes.PERIODS_IN_POSITION: len(self.__position_list[-1].returns_list),
                     TradingSystemAttributes.UNREALISED_RETURN: self.__position_list[-1].unrealised_return,
-                    self.__systems_db.MARKET_STATE_FIELD: MarketState.EXIT.value 
+                    TradingSystemAttributes.MARKET_STATE: MarketState.EXIT.value 
                 }
             )
             print(f'\nExit signal, exit next open\nIndex {len(self.__df)}')
