@@ -83,23 +83,24 @@ if __name__ == '__main__':
     TIME_SERIES_DB = TimeSeriesMongoDb(env.LOCALHOST_MONGO_DB_URL, 'time_series_db')
     SYSTEMS_DB = TetSystemsMongoDb(env.LOCALHOST_MONGO_DB_URL, 'systems_db')
     CLIENT_DB = TetSystemsMongoDb(env.LOCALHOST_MONGO_DB_URL, 'client_db')
+    #CLIENT_DB = TetSystemsMongoDb(env.ATLAS_MONGO_DB_URL, 'client_db')
     
     ML_SYSTEMS_DB = TetSystemsMongoDb(env.LOCALHOST_MONGO_DB_URL, 'systems_db')
     ML_ORDERS_DB = ML_SYSTEMS_DB 
 
     PORTFOLIOS_DB = TetPortfolioMongoDb(env.LOCALHOST_MONGO_DB_URL, 'client_db')
 
-    #start_dt = dt.datetime(2015, 9, 16)
-    #end_dt = dt.datetime.now()
-    start_dt = dt.datetime(1999, 1, 1)
-    end_dt = dt.datetime(2011, 1, 1)
+    start_dt = dt.datetime(2015, 9, 16)
+    end_dt = dt.datetime.now()
+    #start_dt = dt.datetime(1999, 1, 1)
+    #end_dt = dt.datetime(2011, 1, 1)
 
     systems_props_list: List[TradingSystemProperties] = []
     ml_systems_props_list: List[MlTradingSystemProperties] = []
 
-    #from tet_trading_systems.trading_system_development.trading_systems.live_systems.mean_reversion_stocks import get_mean_reversion_stocks_props
-    #mean_reversion_stocks_props = get_mean_reversion_stocks_props(INSTRUMENTS_DB)
-    #systems_props_list.append(mean_reversion_stocks_props)
+    from tet_trading_systems.trading_system_development.trading_systems.live_systems.mean_reversion_stocks import get_mean_reversion_stocks_props
+    mean_reversion_stocks_props = get_mean_reversion_stocks_props(INSTRUMENTS_DB)
+    systems_props_list.append(mean_reversion_stocks_props)
  
     #from tet_trading_systems.trading_system_development.trading_systems.trading_system_example import get_example_system_props
     #example_system_props = get_example_system_props(INSTRUMENTS_DB)
@@ -113,9 +114,9 @@ if __name__ == '__main__':
     #omxs_ml_system_props = get_omxs_ml_system_props(INSTRUMENTS_DB)
     #ml_systems_props_list.append(omxs_ml_system_props)
 
-    from tet_trading_systems.trading_system_development.trading_systems.ml_trading_system_example import get_example_ml_system_props
-    example_ml_system_props = get_example_ml_system_props(INSTRUMENTS_DB)
-    ml_systems_props_list.append(example_ml_system_props)
+    #from tet_trading_systems.trading_system_development.trading_systems.ml_trading_system_example import get_example_ml_system_props
+    #example_ml_system_props = get_example_ml_system_props(INSTRUMENTS_DB)
+    #ml_systems_props_list.append(example_ml_system_props)
 
     for system_props in systems_props_list:
         handle_trading_system(
@@ -124,12 +125,12 @@ if __name__ == '__main__':
             time_series_db=TIME_SERIES_DB, 
             insert_into_db=True, plot_fig=False
         )
-        if system_props.portfolio_args:
-            handle_trading_system_portfolio(
-                system_props, 
-                CLIENT_DB, PORTFOLIOS_DB, 
-                insert_into_db=True
-            )
+        #if system_props.portfolio_args:
+        #    handle_trading_system_portfolio(
+        #        system_props, 
+        #        CLIENT_DB, PORTFOLIOS_DB, 
+        #        insert_into_db=True
+        #    )
     
     for system_props in ml_systems_props_list:
         handle_ml_trading_system(
