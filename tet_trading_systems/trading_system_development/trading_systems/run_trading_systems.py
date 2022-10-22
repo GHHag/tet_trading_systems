@@ -6,7 +6,7 @@ from TETrading.utils.monte_carlo_functions import calculate_safe_f
 
 
 def run_trading_system(
-    data_dict, system_name, entry_func, exit_func, pos_sizer,
+    data_dict, system_name, entry_func, exit_func, #pos_sizer,
     entry_args, exit_args, *args, 
     capital=10000, capital_f=1.0,
     num_of_sims=2500, num_positions_forecasted=120, 
@@ -18,7 +18,7 @@ def run_trading_system(
     save_best_estimate_trades_path=None
 ):
     ts = TradingSystem(
-        system_name, data_dict, entry_func, exit_func, pos_sizer
+        system_name, data_dict, entry_func, exit_func#, pos_sizer
     )
     ts(
         capital=capital,
@@ -53,12 +53,12 @@ def run_trading_system(
         single_symbol_pos_list_db_insert_func=systems_db.insert_single_symbol_position_list,
         json_format_single_symbol_pos_list_db_insert_func=client_db.insert_single_symbol_position_list,
         full_pos_list_db_insert_func=systems_db.insert_position_list,
-        json_format_full_pos_list_db_insert_func=client_db.insert_position_list,
-        full_pos_list_slice_param=num_positions_forecasted
+        json_format_full_pos_list_db_insert_func=client_db.insert_position_list#,
+        #full_pos_list_slice_param=num_positions_forecasted
     )
 
 
-def run_multiple_run_req_pos_sizer_trading_system(
+""" def run_multiple_run_req_pos_sizer_trading_system(
     data_dict, system_name, entry_func, exit_func, pos_sizer,
     entry_args, exit_args, *args, 
     capital=10000, capital_f=1.0,
@@ -116,8 +116,8 @@ def run_multiple_run_req_pos_sizer_trading_system(
             single_symbol_pos_list_db_insert_func=systems_db.insert_single_symbol_position_list,
             json_format_single_symbol_pos_list_db_insert_func=client_db.insert_single_symbol_position_list,
             full_pos_list_db_insert_func=systems_db.insert_position_list,
-            json_format_full_pos_list_db_insert_func=client_db.insert_position_list,
-            full_pos_list_slice_param=num_positions_forecasted
+            json_format_full_pos_list_db_insert_func=client_db.insert_position_list#,
+            #full_pos_list_slice_param=num_positions_forecasted
         )
         position_sizer_dict = ts.position_sizer_dict
 
@@ -178,25 +178,30 @@ def run_ext_pos_sizer_trading_system(
             json_format_single_symbol_pos_list_db_insert_func=client_db.insert_single_symbol_position_list,
             full_pos_list_db_insert_func=systems_db.insert_position_list,
             json_format_full_pos_list_db_insert_func=client_db.insert_position_list,
-            full_pos_list_slice_param=avg_yearly_positions * (years_to_forecast + 1)
+            full_pos_list_slice_param=int(avg_yearly_positions * (years_to_forecast + years_to_forecast / 2))
         )
 
         if ts_run < 1:
             sorted_position_lists = sorted(ts.pos_lists, key=len, reverse=True)
-            position_list_lengths = [len(i) for i in sorted_position_lists[:int(len(data_dict) / 4 + 0.5)]] if len(data_dict) > 1 \
+            position_list_lengths = [len(i) for i in sorted_position_lists[:int(len(data_dict) / 4 + 0.5)]] \
+                if len(data_dict) > 1 \
                 else [len(sorted_position_lists[0])]
-            avg_yearly_positions = int((sum(position_list_lengths) / len(position_list_lengths)) / years_to_forecast + 0.5) 
+            avg_yearly_positions = int(
+                (sum(position_list_lengths) / len(position_list_lengths)) / years_to_forecast + 0.5
+            ) 
             capital_f = round(calculate_safe_f(
                 ts.full_pos_list, ts.total_period_len, tolerated_pct_max_dd, dd_percentile_threshold,
-                forecast_positions=avg_yearly_positions * (years_to_forecast + 1), 
-                forecast_data_fraction=(avg_yearly_positions * years_to_forecast) / (avg_yearly_positions * (years_to_forecast + 1)),
+                forecast_positions=avg_yearly_positions * (years_to_forecast + years_to_forecast / 2), 
+                forecast_data_fraction=(avg_yearly_positions * years_to_forecast) / 
+                                    (avg_yearly_positions * (years_to_forecast + years_to_forecast / 2)),
                 capital=capital, num_of_sims=num_of_sims, print_dataframe=print_dataframe
             ), 2)
             write_to_file_path = None
         else:
             mc_data, num_of_periods = ts.run_monte_carlo_simulation(
-                capital_f, forecast_positions=avg_yearly_positions * (years_to_forecast + 1), 
-                forecast_data_fraction=(avg_yearly_positions * years_to_forecast) / (avg_yearly_positions * (years_to_forecast + 1)),
+                capital_f, forecast_positions=avg_yearly_positions * (years_to_forecast + years_to_forecast / 2), 
+                forecast_data_fraction=(avg_yearly_positions * years_to_forecast) / 
+                                    (avg_yearly_positions * (years_to_forecast + years_to_forecast / 2)),
                 capital=capital, num_of_sims=num_of_sims, plot_fig=plot_fig, 
                 save_fig_to_path=save_best_estimate_trades_path
             )
@@ -215,4 +220,4 @@ def run_ext_pos_sizer_trading_system(
                     {
                         'num_of_periods': num_of_periods
                     }
-                )
+                ) """

@@ -82,8 +82,9 @@ if __name__ == '__main__':
     INSTRUMENTS_DB = InstrumentsMongoDb(env.LOCALHOST_MONGO_DB_URL, 'instruments_db')
     TIME_SERIES_DB = TimeSeriesMongoDb(env.LOCALHOST_MONGO_DB_URL, 'time_series_db')
     SYSTEMS_DB = TetSystemsMongoDb(env.LOCALHOST_MONGO_DB_URL, 'systems_db')
-    CLIENT_DB = TetSystemsMongoDb(env.LOCALHOST_MONGO_DB_URL, 'client_db')
+    #CLIENT_DB = TetSystemsMongoDb(env.LOCALHOST_MONGO_DB_URL, 'client_db')
     #CLIENT_DB = TetSystemsMongoDb(env.ATLAS_MONGO_DB_URL, 'client_db')
+    CLIENT_DB = SYSTEMS_DB
     
     ML_SYSTEMS_DB = TetSystemsMongoDb(env.LOCALHOST_MONGO_DB_URL, 'systems_db')
     ML_ORDERS_DB = ML_SYSTEMS_DB 
