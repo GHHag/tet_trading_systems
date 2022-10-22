@@ -1,5 +1,11 @@
 import datetime as dt
-from typing import List
+from typing import List, Dict
+import json
+
+import pandas as pd
+
+from TETrading.utils.metadata.trading_system_attributes import TradingSystemAttributes
+from TETrading.utils.metadata.market_state_enum import MarketState
 
 from trading_system_properties.trading_system_properties import TradingSystemProperties
 from trading_system_properties.ml_trading_system_properties import MlTradingSystemProperties
@@ -30,11 +36,35 @@ def handle_trading_system(
     system_state_handler = system_props.system_state_handler(
         *system_props.system_state_handler_args, systems_db, data
     )
-    system_state_handler(
-        *system_props.system_state_handler_call_args, pred_features_data,
-        plot_fig=plot_fig,
-        client_db=client_db, insert_into_db=insert_into_db
+    system_position_sizer = system_props.position_sizer(
+        *system_props.position_sizer_args,
     )
+    for _ in range(system_props.required_runs):
+        system_state_handler(
+            *system_props.system_state_handler_call_args, pred_features_data,
+            plot_fig=plot_fig, client_db=client_db, insert_into_db=insert_into_db,
+            **system_props.system_state_handler_call_kwargs
+        )
+        for symbol, dataframe in data.items():
+            market_state = json.loads(
+                systems_db.get_market_state_data_for_symbol(
+                    system_props.system_name, symbol
+                )
+            )
+            if market_state[TradingSystemAttributes.MARKET_STATE] == MarketState.ENTRY.value:
+                print(market_state)
+                # haemta market_state dokument för instrument med 'entry'? -> kör pos sizer för
+                # de instrumenten och inserta datan genom att uppdatera deras dokument? 
+                position_list = systems_db.get_single_symbol_position_list(
+                    system_props.system_name, symbol
+                )
+                pos_sizing_data = system_position_sizer(
+                    position_list, len(dataframe),
+                    *system_props.position_sizer_call_args,
+                    symbol=symbol, **system_props.position_sizer_call_kwargs
+                )
+                print(pos_sizing_data)
+                input('xxxxxxxxxxx')
 
 
 def handle_ml_trading_system(
@@ -95,17 +125,18 @@ if __name__ == '__main__':
     end_dt = dt.datetime.now()
     #start_dt = dt.datetime(1999, 1, 1)
     #end_dt = dt.datetime(2011, 1, 1)
+    end_dt = dt.datetime(2022, 10, 15)
 
     systems_props_list: List[TradingSystemProperties] = []
     ml_systems_props_list: List[MlTradingSystemProperties] = []
 
-    from tet_trading_systems.trading_system_development.trading_systems.live_systems.mean_reversion_stocks import get_mean_reversion_stocks_props
-    mean_reversion_stocks_props = get_mean_reversion_stocks_props(INSTRUMENTS_DB)
-    systems_props_list.append(mean_reversion_stocks_props)
+    #from tet_trading_systems.trading_system_development.trading_systems.live_systems.mean_reversion_stocks import get_mean_reversion_stocks_props
+    #mean_reversion_stocks_props = get_mean_reversion_stocks_props(INSTRUMENTS_DB)
+    #systems_props_list.append(mean_reversion_stocks_props)
  
-    #from tet_trading_systems.trading_system_development.trading_systems.trading_system_example import get_example_system_props
-    #example_system_props = get_example_system_props(INSTRUMENTS_DB)
-    #systems_props_list.append(example_system_props)
+    from tet_trading_systems.trading_system_development.trading_systems.trading_system_example import get_example_system_props
+    example_system_props = get_example_system_props(INSTRUMENTS_DB)
+    systems_props_list.append(example_system_props)
  
     #from system_development.systems_t1.low_vol_bo import get_low_vol_bo_props
     #low_vol_bo_props = get_low_vol_bo_props(INSTRUMENTS_DB)
