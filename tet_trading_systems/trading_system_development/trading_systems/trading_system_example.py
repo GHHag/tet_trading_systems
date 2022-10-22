@@ -1,5 +1,6 @@
 import datetime as dt
 import json
+from typing import Tuple, Dict
 
 import pandas as pd
 
@@ -7,6 +8,7 @@ from securities_db_py_dal.dal import price_data_get_req
 
 from tet_doc_db.tet_mongo_db.systems_mongo_db import TetSystemsMongoDb
 from tet_doc_db.instruments_mongo_db.instruments_mongo_db import InstrumentsMongoDb
+from tet_trading_systems.trading_system_management.position_sizer.safe_f_position_sizer import SafeFPositionSizer
 
 #from TETrading.position.position_sizer.ext_position_sizer import ExtPositionSizer
 
@@ -141,14 +143,15 @@ def get_example_system_props(instruments_db: InstrumentsMongoDb):
             )
         )
 
-    return TradingSystemProperties( 
+    return TradingSystemProperties(
+        system_name, 2,
         preprocess_data,
         (
             symbols_list,
             benchmark_symbol, price_data_get_req,
             entry_args, exit_args
         ),
-        TradingSystemStateHandler,(system_name, None),
+        TradingSystemStateHandler, (system_name, None),
         (
             #run_ext_pos_sizer_trading_system,
             run_trading_system,
@@ -156,7 +159,15 @@ def get_example_system_props(instruments_db: InstrumentsMongoDb):
             #ExtPositionSizer('sharpe_ratio'),
             entry_args, exit_args
         ),
-        None, (), ()
+        {},
+        None, (), (),
+        SafeFPositionSizer, (20, 0.8), (),
+        #system_state_handler_call_kwargs={},#None,
+        #position_sizer_call_kwargs={
+        {
+            'forecast_data_fraction': 0.7,
+            'num_of_sims': 100
+        }
     )
 
 

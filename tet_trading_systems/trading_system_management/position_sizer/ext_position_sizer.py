@@ -1,4 +1,5 @@
-from TETrading.position.position_sizer.position_sizer import IPositionSizer
+from tet_trading_systems.trading_system_management.position_sizer.position_sizer \
+    import IPositionSizer
 
 
 class ExtPositionSizer(IPositionSizer):
