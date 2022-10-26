@@ -10,6 +10,11 @@ class IPositionSizer(ABC):
     @abstractmethod
     def position_size_metric_str(self):
         raise NotImplementedError("Should contain a 'position_size_metric_str' property.")
+
+    @property
+    @abstractmethod
+    def position_sizer_data_dict(self) -> Dict:
+        raise NotImplementedError("Should contain a 'position_sizer_data_dict' property.")
     
     @abstractmethod
     def __call__(self, position_list: List[Position], period_len: int) -> Dict:
