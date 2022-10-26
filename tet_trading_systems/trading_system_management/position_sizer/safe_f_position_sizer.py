@@ -19,14 +19,33 @@ class SafeFPositionSizer(IPositionSizer):
     def __init__(self, tolerated_pct_max_drawdown, max_drawdown_percentile_threshold):
         self.__tol_pct_max_dd = tolerated_pct_max_drawdown
         self.__max_dd_pctl_threshold = max_drawdown_percentile_threshold
+        self.__position_sizer_data_dict = {
+            'capital_fraction': {}, 
+            'persistant_safe_f': {},
+            'car25': {},
+            'car75': {}
+        }
 
     @property
     def position_size_metric_str(self):
         return self.__POSITION_SIZE_METRIC_STR
 
-    #@property
-    #def objective_function_str(self):
-    #    return self.__objective_function_str
+    @property
+    def position_sizer_data_dict(self):
+        return self.__position_sizer_data_dict
+
+    #def get_position_sizer_data_dict_for_symbol(self, symbol):
+    def get_position_sizer_data_dict(self):
+        x = {}
+        for k, v in self.__position_sizer_data_dict.items():
+            for ki, vi in v.items():
+                if not ki in x:
+                    x[ki] = {}
+                    x[ki]['symbol'] = ki
+                    x[ki]['market_state'] = 'entry_'
+                x[ki][k] = vi 
+
+        return {'data': list(x.values())}
 
     def _monte_carlo_simulate_pos_sequence(
         self, positions, num_testing_periods, start_capital, capital_fraction=1.0,
@@ -91,7 +110,6 @@ class SafeFPositionSizer(IPositionSizer):
 
     def __call__(
         self, positions: List[Position], num_testing_periods, 
-        #forecast_positions=100, forecast_data_fraction=0.5, persistant_safe_f=None,
         forecast_data_fraction=0.5, persistant_safe_f=None,
         capital=10000, num_of_sims=2500, symbol='', **kwargs
     ):
@@ -109,9 +127,10 @@ class SafeFPositionSizer(IPositionSizer):
             #positions[-(int(len(positions) * split_data_fraction)):], 
             positions[-(int(len(positions) * forecast_data_fraction)):], 
             num_testing_periods, capital, 
-            capital_fraction=persistant_safe_f if persistant_safe_f else 1.0, 
+            capital_fraction=persistant_safe_f[symbol] if symbol in persistant_safe_f else 1.0, 
+            #capital_fraction=self.__position_size_metric if self.__position_size_metric else 1.0, 
             num_of_sims=num_of_sims, data_amount_used=forecast_data_fraction, 
-            symbol=symbol, **kwargs
+            symbol=symbol#, **kwargs extrahera ut [capital_fraction][symbol] från kwargs, liknande hur det görs i TradingSystem.__call__()
         )
 
         # sort the 'Max drawdown (%)' column and convert to a list
@@ -122,18 +141,18 @@ class SafeFPositionSizer(IPositionSizer):
         dd_at_tolerated_threshold = max_dds[int(len(max_dds) * self.__max_dd_pctl_threshold)]
         if dd_at_tolerated_threshold < 1:
             dd_at_tolerated_threshold = 1
-        # calculate the safe fraction of capital to be used to purchase assets with
-        if not persistant_safe_f:
+
+        if not symbol in persistant_safe_f:
             safe_f = self.__tol_pct_max_dd / dd_at_tolerated_threshold
         else:
-            safe_f = persistant_safe_f
+            safe_f = persistant_safe_f[symbol]
 
-        return {
-            'symbol': symbol,
-            #'sharpe_ratio': kwargs['metrics_dict']['Sharpe ratio'],
-            #'profit_factor': kwargs['metrics_dict']['Profit factor'],
-            #'expectancy': kwargs['metrics_dict']['Expectancy'],
-            'CAR25': round(monte_carlo_sims_df.iloc[-1]['CAR25'], 3),
-            'CAR75': round(monte_carlo_sims_df.iloc[-1]['CAR75'], 3),
-            self.__POSITION_SIZE_METRIC_STR: round(safe_f, 3),
-        }
+        self.__position_sizer_data_dict['persistant_safe_f'][symbol] = safe_f
+        self.__position_sizer_data_dict['capital_fraction'][symbol] = safe_f
+        self.__position_sizer_data_dict['car25'][symbol] = \
+            round(monte_carlo_sims_df.iloc[-1]['CAR25'], 3)
+        self.__position_sizer_data_dict['car75'][symbol] = \
+            round(monte_carlo_sims_df.iloc[-1]['CAR75'], 3)
+        from pprint import pprint
+        pprint(self.__position_sizer_data_dict)
+        #input('safe_f_pos_sizer.__call__()')

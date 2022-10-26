@@ -10,6 +10,8 @@ from TETrading.utils.metadata.market_state_enum import MarketState
 from trading_system_properties.trading_system_properties import TradingSystemProperties
 from trading_system_properties.ml_trading_system_properties import MlTradingSystemProperties
 
+from tet_trading_systems.trading_system_management.position_sizer.position_sizer import IPositionSizer
+
 from tet_doc_db.doc_database_meta_classes.tet_signals_doc_db import ITetSignalsDocumentDatabase
 from tet_doc_db.doc_database_meta_classes.tet_systems_doc_db import ITetSystemsDocumentDatabase
 from tet_doc_db.doc_database_meta_classes.tet_portfolio_doc_db import ITetPortfolioDocumentDatabase
@@ -36,35 +38,59 @@ def handle_trading_system(
     system_state_handler = system_props.system_state_handler(
         *system_props.system_state_handler_args, systems_db, data
     )
-    system_position_sizer = system_props.position_sizer(
-        *system_props.position_sizer_args,
+    system_position_sizer: IPositionSizer = system_props.position_sizer(
+        *system_props.position_sizer_args
     )
     for _ in range(system_props.required_runs):
         system_state_handler(
             *system_props.system_state_handler_call_args, pred_features_data,
             plot_fig=plot_fig, client_db=client_db, insert_into_db=insert_into_db,
-            **system_props.system_state_handler_call_kwargs
+            **system_props.system_state_handler_call_kwargs,
+            **system_position_sizer.position_sizer_data_dict
         )
+        # behöver bara köra för symbols som har market_state == 'entry' efter första körningen 
+        # kan hanteras genom sen lista med symbols och referens till dataframed genom 
+        # data[symbol] for symbol in lista med symbols
         for symbol, dataframe in data.items():
             market_state = json.loads(
                 systems_db.get_market_state_data_for_symbol(
                     system_props.system_name, symbol
                 )
             )
+            # endast de med marketstate == entry behöver köras under andra++ iterationen/
+            # iterationerna, exkludera övriga instrument, gaeller detta alla pos_sizers
+            # eller bara för de som hanterar varje instrument för sig?
             if market_state[TradingSystemAttributes.MARKET_STATE] == MarketState.ENTRY.value:
-                print(market_state)
                 # haemta market_state dokument för instrument med 'entry'? -> kör pos sizer för
                 # de instrumenten och inserta datan genom att uppdatera deras dokument? 
                 position_list = systems_db.get_single_symbol_position_list(
                     system_props.system_name, symbol
                 )
-                pos_sizing_data = system_position_sizer(
+                system_position_sizer(
                     position_list, len(dataframe),
                     *system_props.position_sizer_call_args,
-                    symbol=symbol, **system_props.position_sizer_call_kwargs
+                    symbol=symbol, **system_props.position_sizer_call_kwargs,
+                    **system_position_sizer.position_sizer_data_dict
                 )
-                print(pos_sizing_data)
-                input('xxxxxxxxxxx')
+                #x = system_position_sizer.get_position_sizer_data_dict_for_symbol(symbol)
+                #print(x)
+                #input('x')
+                #systems_db.insert_market_state_data(
+                #    system_props.system_name, 
+                #    json.dumps({'data': x})
+                #)
+
+        #print(system_position_sizer.position_sizer_data_dict)
+    x = system_position_sizer.get_position_sizer_data_dict()
+    print()
+    from pprint import pprint
+    pprint(x)
+    input('xxxxxxxxxxx')
+    systems_db.insert_market_state_data(
+        system_props.system_name, 
+        #json.dumps({'data': system_position_sizer.position_sizer_data_dict})
+        json.dumps(x)
+    )
 
 
 def handle_ml_trading_system(

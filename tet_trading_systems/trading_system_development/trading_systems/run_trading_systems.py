@@ -6,23 +6,21 @@ from TETrading.utils.monte_carlo_functions import calculate_safe_f
 
 
 def run_trading_system(
-    data_dict, system_name, entry_func, exit_func, #pos_sizer,
+    data_dict, system_name, entry_func, exit_func,
     entry_args, exit_args, *args, 
-    capital=10000, capital_f=1.0,
-    num_of_sims=2500, num_positions_forecasted=120, 
+    capital=10000, capital_fraction=1.0, num_of_sims=2500, 
     market_state_null_default=False,
     print_dataframe=False, plot_fig=False, write_to_file_path=None, 
     systems_db: ITetSystemsDocumentDatabase=None, 
     client_db: ITetSystemsDocumentDatabase=None, 
     insert_into_db=False,
-    save_best_estimate_trades_path=None
+    save_best_estimate_trades_path=None,
+    **kwargs
 ):
-    ts = TradingSystem(
-        system_name, data_dict, entry_func, exit_func#, pos_sizer
-    )
+    ts = TradingSystem(system_name, data_dict, entry_func, exit_func)
     ts(
         capital=capital,
-        capital_fraction=capital_f,
+        capital_fraction=capital_fraction,
         market_state_null_default=market_state_null_default,
         plot_performance_summary=plot_fig,
         save_summary_plot_to_path=None, 
@@ -53,8 +51,7 @@ def run_trading_system(
         single_symbol_pos_list_db_insert_func=systems_db.insert_single_symbol_position_list,
         json_format_single_symbol_pos_list_db_insert_func=client_db.insert_single_symbol_position_list,
         full_pos_list_db_insert_func=systems_db.insert_position_list,
-        json_format_full_pos_list_db_insert_func=client_db.insert_position_list#,
-        #full_pos_list_slice_param=num_positions_forecasted
+        json_format_full_pos_list_db_insert_func=client_db.insert_position_list
     )
 
 
