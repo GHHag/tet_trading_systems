@@ -48,48 +48,29 @@ def handle_trading_system(
             **system_props.system_state_handler_call_kwargs,
             **system_position_sizer.position_sizer_data_dict
         )
-        # behöver bara köra för symbols som har market_state == 'entry' efter första körningen 
-        # kan hanteras genom sen lista med symbols och referens till dataframed genom 
-        # data[symbol] for symbol in lista med symbols
-        for symbol, dataframe in data.items():
-            market_state = json.loads(
-                systems_db.get_market_state_data_for_symbol(
-                    system_props.system_name, symbol
-                )
-            )
-            # endast de med marketstate == entry behöver köras under andra++ iterationen/
-            # iterationerna, exkludera övriga instrument, gaeller detta alla pos_sizers
-            # eller bara för de som hanterar varje instrument för sig?
-            if market_state[TradingSystemAttributes.MARKET_STATE] == MarketState.ENTRY.value:
-                # haemta market_state dokument för instrument med 'entry'? -> kör pos sizer för
-                # de instrumenten och inserta datan genom att uppdatera deras dokument? 
-                position_list = systems_db.get_single_symbol_position_list(
-                    system_props.system_name, symbol
-                )
-                system_position_sizer(
-                    position_list, len(dataframe),
-                    *system_props.position_sizer_call_args,
-                    symbol=symbol, **system_props.position_sizer_call_kwargs,
-                    **system_position_sizer.position_sizer_data_dict
-                )
-                #x = system_position_sizer.get_position_sizer_data_dict_for_symbol(symbol)
-                #print(x)
-                #input('x')
-                #systems_db.insert_market_state_data(
-                #    system_props.system_name, 
-                #    json.dumps({'data': x})
-                #)
 
-        #print(system_position_sizer.position_sizer_data_dict)
-    x = system_position_sizer.get_position_sizer_data_dict()
-    print()
-    from pprint import pprint
-    pprint(x)
-    input('xxxxxxxxxxx')
+        market_states_data = json.loads(
+            systems_db.get_market_state_data(
+                system_props.system_name, MarketState.ENTRY.value
+            )
+        )
+        
+        for data_dict in market_states_data:
+            position_list = systems_db.get_single_symbol_position_list(
+                system_props.system_name, data_dict[TradingSystemAttributes.SYMBOL]
+            )
+            system_position_sizer(
+                position_list, len(data[data_dict[TradingSystemAttributes.SYMBOL]]),
+                *system_props.position_sizer_call_args,
+                symbol=data_dict[TradingSystemAttributes.SYMBOL], 
+                **system_props.position_sizer_call_kwargs,
+                **system_position_sizer.position_sizer_data_dict
+            )
+
+    # leagg till func i pos sizer metaclass 
+    pos_sizer_data_dict = system_position_sizer.get_position_sizer_data_dict()
     systems_db.insert_market_state_data(
-        system_props.system_name, 
-        #json.dumps({'data': system_position_sizer.position_sizer_data_dict})
-        json.dumps(x)
+        system_props.system_name, json.dumps(pos_sizer_data_dict)
     )
 
 
