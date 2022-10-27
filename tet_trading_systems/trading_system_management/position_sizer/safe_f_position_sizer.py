@@ -3,6 +3,8 @@ from typing import List
 
 import pandas as pd
 
+from TETrading.utils.metadata.trading_system_attributes import TradingSystemAttributes
+from TETrading.utils.metadata.market_state_enum import MarketState
 from TETrading.position.position import Position
 from TETrading.position.position_manager import PositionManager
 from TETrading.utils.metric_functions import calculate_cagr
@@ -15,15 +17,19 @@ from tet_trading_systems.trading_system_management.position_sizer.position_sizer
 class SafeFPositionSizer(IPositionSizer):
 
     __POSITION_SIZE_METRIC_STR = 'safe-f'
+    __CAPITAL_FRACTION = 'capital_fraction'
+    __PERSISTANT_SAFE_F = 'persistant_safe_f'
+    __CAR25 = 'car25'
+    __CAR75 = 'car75'
 
     def __init__(self, tolerated_pct_max_drawdown, max_drawdown_percentile_threshold):
         self.__tol_pct_max_dd = tolerated_pct_max_drawdown
         self.__max_dd_pctl_threshold = max_drawdown_percentile_threshold
         self.__position_sizer_data_dict = {
-            'capital_fraction': {}, 
-            'persistant_safe_f': {},
-            'car25': {},
-            'car75': {}
+            self.__CAPITAL_FRACTION: {}, 
+            self.__PERSISTANT_SAFE_F: {},
+            self.__CAR25: {},
+            self.__CAR75: {}
         }
 
     @property
@@ -34,18 +40,17 @@ class SafeFPositionSizer(IPositionSizer):
     def position_sizer_data_dict(self):
         return self.__position_sizer_data_dict
 
-    #def get_position_sizer_data_dict_for_symbol(self, symbol):
     def get_position_sizer_data_dict(self):
-        x = {}
+        position_sizer_data = {}
         for k, v in self.__position_sizer_data_dict.items():
             for ki, vi in v.items():
-                if not ki in x:
-                    x[ki] = {}
-                    x[ki]['symbol'] = ki
-                    x[ki]['market_state'] = 'entry_'
-                x[ki][k] = vi 
+                if not ki in position_sizer_data:
+                    position_sizer_data[ki] = {}
+                    position_sizer_data[ki][TradingSystemAttributes.SYMBOL] = ki
+                    position_sizer_data[ki][TradingSystemAttributes.MARKET_STATE] = MarketState.ENTRY.value
+                position_sizer_data[ki][k] = vi
 
-        return {'data': list(x.values())}
+        return {'data': list(position_sizer_data.values())}
 
     def _monte_carlo_simulate_pos_sequence(
         self, positions, num_testing_periods, start_capital, capital_fraction=1.0,
@@ -94,8 +99,8 @@ class SafeFPositionSizer(IPositionSizer):
         )
 
         car_series = pd.Series()
-        car_series['CAR25'] = car25
-        car_series['CAR75'] = car75
+        car_series[self.__CAR25] = car25
+        car_series[self.__CAR75] = car75
         monte_carlo_sims_df: pd.DataFrame = monte_carlo_sims_df.append(car_series, ignore_index=True)
 
         if print_dataframe:
@@ -134,7 +139,7 @@ class SafeFPositionSizer(IPositionSizer):
         )
 
         # sort the 'Max drawdown (%)' column and convert to a list
-        max_dds = sorted(monte_carlo_sims_df['Max drawdown (%)'].to_list())
+        max_dds = sorted(monte_carlo_sims_df['max_drawdown_(%)'].to_list())
         # get the drawdown value at the percentile set to be the threshold at which to limit the 
         # probability of getting a max drawdown of that magnitude at when simulating sequences 
         # of the best estimate positions
@@ -147,12 +152,12 @@ class SafeFPositionSizer(IPositionSizer):
         else:
             safe_f = persistant_safe_f[symbol]
 
-        self.__position_sizer_data_dict['persistant_safe_f'][symbol] = safe_f
-        self.__position_sizer_data_dict['capital_fraction'][symbol] = safe_f
-        self.__position_sizer_data_dict['car25'][symbol] = \
-            round(monte_carlo_sims_df.iloc[-1]['CAR25'], 3)
-        self.__position_sizer_data_dict['car75'][symbol] = \
-            round(monte_carlo_sims_df.iloc[-1]['CAR75'], 3)
+        self.__position_sizer_data_dict[self.__PERSISTANT_SAFE_F] = round(safe_f, 3)
+        self.__position_sizer_data_dict[self.__CAPITAL_FRACTION][symbol] = round(safe_f, 3)
+        self.__position_sizer_data_dict[self.__CAR25][symbol] = \
+            round(monte_carlo_sims_df.iloc[-1][self.__CAR25], 3)
+        self.__position_sizer_data_dict[self.__CAR75][symbol] = \
+            round(monte_carlo_sims_df.iloc[-1][self.__CAR75], 3)
         from pprint import pprint
         pprint(self.__position_sizer_data_dict)
         #input('safe_f_pos_sizer.__call__()')
