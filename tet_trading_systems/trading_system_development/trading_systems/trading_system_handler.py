@@ -49,12 +49,12 @@ def handle_trading_system(
             **system_position_sizer.position_sizer_data_dict
         )
 
-        market_states_data = json.loads(
+        market_states_data: List[Dict] = json.loads(
             systems_db.get_market_state_data(
                 system_props.system_name, MarketState.ENTRY.value
             )
         )
-        
+
         for data_dict in market_states_data:
             position_list = systems_db.get_single_symbol_position_list(
                 system_props.system_name, data_dict[TradingSystemAttributes.SYMBOL]
@@ -67,7 +67,6 @@ def handle_trading_system(
                 **system_position_sizer.position_sizer_data_dict
             )
 
-    # leagg till func i pos sizer metaclass 
     pos_sizer_data_dict = system_position_sizer.get_position_sizer_data_dict()
     systems_db.insert_market_state_data(
         system_props.system_name, json.dumps(pos_sizer_data_dict)
@@ -128,22 +127,23 @@ if __name__ == '__main__':
 
     PORTFOLIOS_DB = TetPortfolioMongoDb(env.LOCALHOST_MONGO_DB_URL, 'client_db')
 
-    start_dt = dt.datetime(2015, 9, 16)
+    #start_dt = dt.datetime(2015, 9, 16)
+    start_dt = dt.datetime(1999, 1, 1)
     end_dt = dt.datetime.now()
     #start_dt = dt.datetime(1999, 1, 1)
     #end_dt = dt.datetime(2011, 1, 1)
-    end_dt = dt.datetime(2022, 10, 15)
+    end_dt = dt.datetime(2022, 10, 27)
 
     systems_props_list: List[TradingSystemProperties] = []
     ml_systems_props_list: List[MlTradingSystemProperties] = []
 
-    #from tet_trading_systems.trading_system_development.trading_systems.live_systems.mean_reversion_stocks import get_mean_reversion_stocks_props
-    #mean_reversion_stocks_props = get_mean_reversion_stocks_props(INSTRUMENTS_DB)
-    #systems_props_list.append(mean_reversion_stocks_props)
+    from tet_trading_systems.trading_system_development.trading_systems.live_systems.mean_reversion_stocks import get_mean_reversion_stocks_props
+    mean_reversion_stocks_props = get_mean_reversion_stocks_props(INSTRUMENTS_DB)
+    systems_props_list.append(mean_reversion_stocks_props)
  
-    from tet_trading_systems.trading_system_development.trading_systems.trading_system_example import get_example_system_props
-    example_system_props = get_example_system_props(INSTRUMENTS_DB)
-    systems_props_list.append(example_system_props)
+    #from tet_trading_systems.trading_system_development.trading_systems.trading_system_example import get_example_system_props
+    #example_system_props = get_example_system_props(INSTRUMENTS_DB)
+    #systems_props_list.append(example_system_props)
  
     #from system_development.systems_t1.low_vol_bo import get_low_vol_bo_props
     #low_vol_bo_props = get_low_vol_bo_props(INSTRUMENTS_DB)

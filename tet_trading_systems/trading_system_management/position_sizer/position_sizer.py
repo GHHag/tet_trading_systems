@@ -21,5 +21,5 @@ class IPositionSizer(ABC):
         raise NotImplementedError("Should implement 'get_position_sizer_data_dict()'")
     
     @abstractmethod
-    def __call__(self, position_list: List[Position], period_len: int) -> Dict:
+    def __call__(self, position_list: List[Position], period_len: int, **kwargs: Dict):
         raise NotImplementedError('Should implement __call__()')
