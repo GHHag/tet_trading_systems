@@ -4,7 +4,6 @@ from typing import List
 import pandas as pd
 
 from TETrading.utils.metadata.trading_system_attributes import TradingSystemAttributes
-from TETrading.utils.metadata.market_state_enum import MarketState
 from TETrading.position.position import Position
 from TETrading.position.position_manager import PositionManager
 from TETrading.utils.metric_functions import calculate_cagr
@@ -41,19 +40,19 @@ class SafeFPositionSizer(IPositionSizer):
         return self.__position_sizer_data_dict
 
     def get_position_sizer_data_dict(self):
-        position_sizer_data = {}
+        pos_sizer_data = {}
         for k, v in self.__position_sizer_data_dict.items():
             for ki, vi in v.items():
-                if not ki in position_sizer_data:
-                    position_sizer_data[ki] = {}
-                    position_sizer_data[ki][TradingSystemAttributes.SYMBOL] = ki
-                    position_sizer_data[ki][TradingSystemAttributes.MARKET_STATE] = MarketState.ENTRY.value
-                position_sizer_data[ki][k] = vi
+                if not ki in pos_sizer_data:
+                    pos_sizer_data[ki] = {}
+                    pos_sizer_data[ki][TradingSystemAttributes.SYMBOL] = ki
+                pos_sizer_data[ki][k] = vi
 
-        return {'data': list(position_sizer_data.values())}
+        return {'data': list(pos_sizer_data.values())}
 
     def _monte_carlo_simulate_pos_sequence(
-        self, positions, num_testing_periods, start_capital, capital_fraction=1.0,
+        self, positions, num_testing_periods, start_capital,
+        capital_fraction=1.0,
         num_of_sims=1000, data_amount_used=0.5, symbol='', print_dataframe=False, 
         plot_monte_carlo_sims=False, **kwargs
     ):
@@ -70,7 +69,7 @@ class SafeFPositionSizer(IPositionSizer):
 
         for _ in range(num_of_sims):
             sim_positions = PositionManager(
-                symbol, (num_testing_periods * data_amount_used), start_capital,
+                symbol, int(num_testing_periods * data_amount_used), start_capital,
                 capital_fraction
             )
 
@@ -115,30 +114,34 @@ class SafeFPositionSizer(IPositionSizer):
 
     def __call__(
         self, positions: List[Position], num_testing_periods, 
-        forecast_data_fraction=0.5, persistant_safe_f=None,
+        avg_yearly_periods=251, years_to_forecast=2, persistant_safe_f=None,
         capital=10000, num_of_sims=2500, symbol='', **kwargs
     ):
-        #split_data_fraction = 1.0
-        #if len(positions) >= forecast_positions:
-        #    split_data_fraction = forecast_positions / len(positions)
+        avg_yearly_positions = len(positions) / (num_testing_periods / avg_yearly_periods)
+        forecast_positions = avg_yearly_positions * (years_to_forecast + years_to_forecast / 2)
+        forecast_data_fraction = (avg_yearly_positions * years_to_forecast) / forecast_positions
+        """ print('avg_yearly_positions', avg_yearly_positions)
+        print('forecast_positions', forecast_positions)
+        print('forecast_data_Fraction', forecast_data_fraction)
+        print()
+        print(forecast_positions)
+        print(int(len(positions) * forecast_data_fraction))
+        input('safe f call') """
 
-        #period_len = int(period_len * split_data_fraction)
-        num_testing_periods = int(num_testing_periods* forecast_data_fraction)
         # sort positions on date
         positions.sort(key=lambda tr: tr.entry_dt)
 
         # simulate sequences of given Position objects
         monte_carlo_sims_df: pd.DataFrame = self._monte_carlo_simulate_pos_sequence(
-            #positions[-(int(len(positions) * split_data_fraction)):], 
             positions[-(int(len(positions) * forecast_data_fraction)):], 
             num_testing_periods, capital, 
             capital_fraction=persistant_safe_f[symbol] if symbol in persistant_safe_f else 1.0, 
-            #capital_fraction=self.__position_size_metric if self.__position_size_metric else 1.0, 
-            num_of_sims=num_of_sims, data_amount_used=forecast_data_fraction, 
-            symbol=symbol#, **kwargs extrahera ut [capital_fraction][symbol] från kwargs, liknande hur det görs i TradingSystem.__call__()
+            num_of_sims=num_of_sims, data_amount_used=forecast_data_fraction,
+            symbol=symbol #,plot_monte_carlo_sims=True
         )
 
-        # sort the 'Max drawdown (%)' column and convert to a list
+        # sort the 'max_drawdown_(%)' column and convert to a list
+        # haemta max_drawdown_(%) från metadata ist?
         max_dds = sorted(monte_carlo_sims_df['max_drawdown_(%)'].to_list())
         # get the drawdown value at the percentile set to be the threshold at which to limit the 
         # probability of getting a max drawdown of that magnitude at when simulating sequences 
@@ -152,12 +155,10 @@ class SafeFPositionSizer(IPositionSizer):
         else:
             safe_f = persistant_safe_f[symbol]
 
-        self.__position_sizer_data_dict[self.__PERSISTANT_SAFE_F] = round(safe_f, 3)
-        self.__position_sizer_data_dict[self.__CAPITAL_FRACTION][symbol] = round(safe_f, 3)
-        self.__position_sizer_data_dict[self.__CAR25][symbol] = \
-            round(monte_carlo_sims_df.iloc[-1][self.__CAR25], 3)
-        self.__position_sizer_data_dict[self.__CAR75][symbol] = \
-            round(monte_carlo_sims_df.iloc[-1][self.__CAR75], 3)
+        self.__position_sizer_data_dict[self.__PERSISTANT_SAFE_F][symbol] = safe_f
+        self.__position_sizer_data_dict[self.__CAPITAL_FRACTION][symbol] = safe_f
+        self.__position_sizer_data_dict[self.__CAR25][symbol] = monte_carlo_sims_df.iloc[-1][self.__CAR25]
+        self.__position_sizer_data_dict[self.__CAR75][symbol] = monte_carlo_sims_df.iloc[-1][self.__CAR75]
         from pprint import pprint
         pprint(self.__position_sizer_data_dict)
         #input('safe_f_pos_sizer.__call__()')

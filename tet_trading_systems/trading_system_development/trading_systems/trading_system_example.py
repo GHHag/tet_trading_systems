@@ -8,12 +8,12 @@ from securities_db_py_dal.dal import price_data_get_req
 
 from tet_doc_db.tet_mongo_db.systems_mongo_db import TetSystemsMongoDb
 from tet_doc_db.instruments_mongo_db.instruments_mongo_db import InstrumentsMongoDb
-from tet_trading_systems.trading_system_management.position_sizer.safe_f_position_sizer import SafeFPositionSizer
 
 #from TETrading.position.position_sizer.ext_position_sizer import ExtPositionSizer
 
 from trading_system_properties.trading_system_properties import TradingSystemProperties
 
+from tet_trading_systems.trading_system_management.position_sizer.safe_f_position_sizer import SafeFPositionSizer
 from tet_trading_systems.trading_system_state_handler.trad_trading_system_state_handler import TradingSystemStateHandler
 
 #from tet_trading_systems.trading_system_development.trading_systems.run_trading_systems import run_ext_pos_sizer_trading_system
@@ -195,6 +195,6 @@ if __name__ == '__main__':
         #ExtPositionSizer('sharpe_ratio'),
         system_props.preprocess_data_args[-2], 
         system_props.preprocess_data_args[-1], 
-        plot_fig=True,
+        plot_fig=False,
         systems_db=SYSTEMS_DB, client_db=SYSTEMS_DB, insert_into_db=False
     )

@@ -89,8 +89,8 @@ def create_reg_models(
         y_test = y[int(X.shape[0]*0.7):]"""
         ts_split = TimeSeriesSplit(n_splits=3)
 
-        optimizable_params1 = [0]
-        optimizable_params2 = [0]
+        optimizable_params1 = np.array([0])
+        optimizable_params2 = np.array([0])
         models_df_dict[symbol] = None
         try:
             for tr_index, val_index in ts_split.split(X):
@@ -178,8 +178,8 @@ def create_classification_models(
         y_test = y[int(X.shape[0]*0.7):]"""
         ts_split = TimeSeriesSplit(n_splits=3)
 
-        optimizable_params1 = [0]
-        optimizable_params2 = [0]
+        optimizable_params1 = np.array([0])
+        optimizable_params2 = np.array([0])
         models_df_dict[symbol] = None
         try:
             for tr_index, val_index in ts_split.split(X):
@@ -204,6 +204,8 @@ def create_classification_models(
                         pred_df = df.iloc[-len(X_test):].copy()
                         pred_df['pred'] = y_pred.tolist()
                         pred_precision = precision_score(y_test, y_pred)
+                        tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
+                        print(f'TN: {tn}, FP: {fp}, FN: {fn}, TP: {tp}')
                         print(
                             f'Accuracy: {cf_score_dict["Accuracy"]}\n'
                             f'Classification report: \n'
