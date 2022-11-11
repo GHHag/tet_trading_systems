@@ -1,6 +1,5 @@
 import datetime as dt
 import json
-from typing import Tuple, Dict
 
 import pandas as pd
 
@@ -9,14 +8,11 @@ from securities_db_py_dal.dal import price_data_get_req
 from tet_doc_db.tet_mongo_db.systems_mongo_db import TetSystemsMongoDb
 from tet_doc_db.instruments_mongo_db.instruments_mongo_db import InstrumentsMongoDb
 
-#from TETrading.position.position_sizer.ext_position_sizer import ExtPositionSizer
-
 from trading_system_properties.trading_system_properties import TradingSystemProperties
 
 from tet_trading_systems.trading_system_management.position_sizer.safe_f_position_sizer import SafeFPositionSizer
 from tet_trading_systems.trading_system_state_handler.trad_trading_system_state_handler import TradingSystemStateHandler
 
-#from tet_trading_systems.trading_system_development.trading_systems.run_trading_systems import run_ext_pos_sizer_trading_system
 from tet_trading_systems.trading_system_development.trading_systems.run_trading_systems import run_trading_system
 
 
@@ -153,19 +149,14 @@ def get_example_system_props(instruments_db: InstrumentsMongoDb):
         ),
         TradingSystemStateHandler, (system_name, None),
         (
-            #run_ext_pos_sizer_trading_system,
             run_trading_system,
             entry_logic_example, exit_logic_example,
-            #ExtPositionSizer('sharpe_ratio'),
             entry_args, exit_args
         ),
         {},
         None, (), (),
         SafeFPositionSizer, (20, 0.8), (),
-        #system_state_handler_call_kwargs={},#None,
-        #position_sizer_call_kwargs={
         {
-            'forecast_data_fraction': 0.7,
             'num_of_sims': 100
         }
     )
@@ -188,11 +179,9 @@ if __name__ == '__main__':
         start_dt, end_dt
     )
 
-    #run_ext_pos_sizer_trading_system(
     run_trading_system(
         df_dict, 'example_system',
         entry_logic_example, exit_logic_example,
-        #ExtPositionSizer('sharpe_ratio'),
         system_props.preprocess_data_args[-2], 
         system_props.preprocess_data_args[-1], 
         plot_fig=False,
