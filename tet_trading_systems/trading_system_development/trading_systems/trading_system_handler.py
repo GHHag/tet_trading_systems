@@ -48,19 +48,21 @@ def handle_trading_system(
             **system_props.system_state_handler_call_kwargs,
             **system_position_sizer.position_sizer_data_dict
         )
-
         market_states_data: List[Dict] = json.loads(
             systems_db.get_market_state_data(
                 system_props.system_name, MarketState.ENTRY.value
             )
         )
 
+        # anropa haer system_props.get_position_list_function() beroende på om det ska vara
+        # t ex get_single_symbol_position_list eller get_position_list?
         for data_dict in market_states_data:
-            position_list = systems_db.get_single_symbol_position_list(
-                system_props.system_name, data_dict[TradingSystemAttributes.SYMBOL]
+            position_list, num_of_periods = systems_db.get_single_symbol_position_list(
+                system_props.system_name, data_dict[TradingSystemAttributes.SYMBOL],
+                return_num_of_periods=True
             )
             system_position_sizer(
-                position_list, len(data[data_dict[TradingSystemAttributes.SYMBOL]]),
+                position_list, num_of_periods,
                 *system_props.position_sizer_call_args,
                 symbol=data_dict[TradingSystemAttributes.SYMBOL], 
                 **system_props.position_sizer_call_kwargs,
@@ -72,6 +74,47 @@ def handle_trading_system(
         system_props.system_name, json.dumps(pos_sizer_data_dict)
     )
 
+
+def handle_ext_pos_sizer_trading_system(
+    system_props: TradingSystemProperties, start_dt, end_dt, 
+    systems_db: ITetSystemsDocumentDatabase, 
+    client_db: ITetSignalsDocumentDatabase, 
+    time_series_db: ITimeSeriesDocumentDatabase=None,
+    insert_into_db=False, plot_fig=False 
+):
+    data, pred_features_data = system_props.preprocess_data_function(
+        *system_props.preprocess_data_args, start_dt, end_dt
+    )
+    #if time_series_db:
+    #    time_series_db.insert_pandas_time_series_data(data)
+
+    system_state_handler = system_props.system_state_handler(
+        *system_props.system_state_handler_args, systems_db, data
+    )
+    system_position_sizer: IPositionSizer = system_props.position_sizer(
+        *system_props.position_sizer_args
+    )
+    for _ in range(system_props.required_runs):
+        system_state_handler(
+            *system_props.system_state_handler_call_args, pred_features_data,
+            plot_fig=plot_fig, client_db=client_db, insert_into_db=insert_into_db,
+            **system_props.system_state_handler_call_kwargs,
+            **system_position_sizer.position_sizer_data_dict
+        )
+        from TETrading.position.position import Position
+        position_list: List[Position] = systems_db.get_position_list(system_props.system_name)
+        # hantera num_of_periods nån annanstans (TET) för att decoupla
+        num_of_periods = pd.Timedelta(position_list[-1].entry_dt - position_list[0].exit_signal_dt).days
+        system_position_sizer(
+            position_list, num_of_periods,
+            *system_props.position_sizer_call_args,
+            **system_props.position_sizer_call_kwargs,
+            **system_position_sizer.position_sizer_data_dict
+        )
+
+    pos_sizer_data_dict = system_position_sizer.get_position_sizer_data_dict()
+    systems_db.insert_system_metrics(system_props.system_name, pos_sizer_data_dict)
+ 
 
 def handle_ml_trading_system(
     system_props: MlTradingSystemProperties, start_dt, end_dt, 
@@ -127,12 +170,12 @@ if __name__ == '__main__':
 
     PORTFOLIOS_DB = TetPortfolioMongoDb(env.LOCALHOST_MONGO_DB_URL, 'client_db')
 
-    #start_dt = dt.datetime(2015, 9, 16)
-    start_dt = dt.datetime(1999, 1, 1)
+    start_dt = dt.datetime(2015, 9, 16)
+    #start_dt = dt.datetime(1999, 1, 1)
     end_dt = dt.datetime.now()
     #start_dt = dt.datetime(1999, 1, 1)
     #end_dt = dt.datetime(2011, 1, 1)
-    end_dt = dt.datetime(2022, 10, 27)
+    #end_dt = dt.datetime(2022, 10, 27)
 
     systems_props_list: List[TradingSystemProperties] = []
     ml_systems_props_list: List[MlTradingSystemProperties] = []
@@ -158,7 +201,9 @@ if __name__ == '__main__':
     #ml_systems_props_list.append(example_ml_system_props)
 
     for system_props in systems_props_list:
-        handle_trading_system(
+        # system_props behöver innehålla funktionen som anropas haer
+        #handle_trading_system(
+        handle_ext_pos_sizer_trading_system(
             system_props, start_dt, end_dt, 
             SYSTEMS_DB, CLIENT_DB, 
             time_series_db=TIME_SERIES_DB, 

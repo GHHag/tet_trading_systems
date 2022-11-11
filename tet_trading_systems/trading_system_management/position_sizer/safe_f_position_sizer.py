@@ -120,13 +120,12 @@ class SafeFPositionSizer(IPositionSizer):
         avg_yearly_positions = len(positions) / (num_testing_periods / avg_yearly_periods)
         forecast_positions = avg_yearly_positions * (years_to_forecast + years_to_forecast / 2)
         forecast_data_fraction = (avg_yearly_positions * years_to_forecast) / forecast_positions
-        """ print('avg_yearly_positions', avg_yearly_positions)
+        """ print()
+        print('avg_yearly_positions', avg_yearly_positions)
         print('forecast_positions', forecast_positions)
-        print('forecast_data_Fraction', forecast_data_fraction)
-        print()
-        print(forecast_positions)
-        print(int(len(positions) * forecast_data_fraction))
-        input('safe f call') """
+        print('forecast_data_Fraction', forecast_data_fraction) # alltid 0.66..n
+        print() """
+        #input('safe f call') """
 
         # sort positions on date
         positions.sort(key=lambda tr: tr.entry_dt)
@@ -155,8 +154,8 @@ class SafeFPositionSizer(IPositionSizer):
         else:
             safe_f = persistant_safe_f[symbol]
 
-        self.__position_sizer_data_dict[self.__PERSISTANT_SAFE_F][symbol] = safe_f
         self.__position_sizer_data_dict[self.__CAPITAL_FRACTION][symbol] = safe_f
+        self.__position_sizer_data_dict[self.__PERSISTANT_SAFE_F][symbol] = safe_f
         self.__position_sizer_data_dict[self.__CAR25][symbol] = monte_carlo_sims_df.iloc[-1][self.__CAR25]
         self.__position_sizer_data_dict[self.__CAR75][symbol] = monte_carlo_sims_df.iloc[-1][self.__CAR75]
         from pprint import pprint
