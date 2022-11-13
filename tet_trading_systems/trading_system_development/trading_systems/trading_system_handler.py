@@ -54,8 +54,6 @@ def handle_trading_system(
             )
         )
 
-        # anropa haer system_props.get_position_list_function() beroende på om det ska vara
-        # t ex get_single_symbol_position_list eller get_position_list?
         for data_dict in market_states_data:
             position_list, num_of_periods = systems_db.get_single_symbol_position_list(
                 system_props.system_name, data_dict[TradingSystemAttributes.SYMBOL],
@@ -101,10 +99,7 @@ def handle_ext_pos_sizer_trading_system(
             **system_props.system_state_handler_call_kwargs,
             **system_position_sizer.position_sizer_data_dict
         )
-        from TETrading.position.position import Position
-        position_list: List[Position] = systems_db.get_position_list(system_props.system_name)
-        # hantera num_of_periods nån annanstans (TET) för att decoupla
-        num_of_periods = pd.Timedelta(position_list[-1].entry_dt - position_list[0].exit_signal_dt).days
+        position_list, num_of_periods = systems_db.get_position_list(system_props.system_name, return_num_of_periods=True)
         system_position_sizer(
             position_list, num_of_periods,
             *system_props.position_sizer_call_args,
