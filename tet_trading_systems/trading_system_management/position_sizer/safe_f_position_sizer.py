@@ -1,5 +1,5 @@
 import random
-from typing import List
+from typing import Dict, List
 
 import pandas as pd
 
@@ -25,6 +25,7 @@ class SafeFPositionSizer(IPositionSizer):
         self.__tol_pct_max_dd = tolerated_pct_max_drawdown
         self.__max_dd_pctl_threshold = max_drawdown_percentile_threshold
         self.__position_sizer_data_dict = {
+            self.__POSITION_SIZE_METRIC_STR: {},
             self.__CAPITAL_FRACTION: {}, 
             self.__PERSISTANT_SAFE_F: {},
             self.__CAR25: {},
@@ -36,10 +37,10 @@ class SafeFPositionSizer(IPositionSizer):
         return self.__POSITION_SIZE_METRIC_STR
 
     @property
-    def position_sizer_data_dict(self):
+    def position_sizer_data_dict(self) -> Dict:
         return self.__position_sizer_data_dict
 
-    def get_position_sizer_data_dict(self):
+    def get_position_sizer_data_dict(self) -> Dict:
         pos_sizer_data = {}
         for k, v in self.__position_sizer_data_dict.items():
             for ki, vi in v.items():
@@ -113,11 +114,11 @@ class SafeFPositionSizer(IPositionSizer):
     def __call__(
         self, position_list: List[Position], num_of_periods, 
         avg_yearly_periods=251, years_to_forecast=2, persistant_safe_f=None,
-        capital=10000, num_of_sims=2500, symbol='', plot_monte_carlo_sims_data=False, 
+        capital=10000, num_of_sims=2500, symbol='', plot_fig=False, 
         **kwargs
     ):
         avg_yearly_positions = len(position_list) / (num_of_periods / avg_yearly_periods)
-        forecast_positions = avg_yearly_positions * (years_to_forecast + years_to_forecast / 2)
+        forecast_positions = avg_yearly_positions * (years_to_forecast * 1.5)
         forecast_data_fraction = (avg_yearly_positions * years_to_forecast) / forecast_positions
 
         # sort positions on date
@@ -128,7 +129,7 @@ class SafeFPositionSizer(IPositionSizer):
             position_list, num_of_periods, capital, 
             capital_fraction=persistant_safe_f[symbol] if symbol in persistant_safe_f else 1.0, 
             num_of_sims=num_of_sims, data_fraction_used=forecast_data_fraction,
-            symbol=symbol, plot_monte_carlo_sims=plot_monte_carlo_sims_data
+            symbol=symbol, plot_fig=plot_fig 
         )
 
         # sort the 'max_drawdown_(%)' column and convert to a list
@@ -146,7 +147,7 @@ class SafeFPositionSizer(IPositionSizer):
         else:
             safe_f = persistant_safe_f[symbol]
 
-        #self.__position_sizer_data_dict[self.__POSITION_SIZE_METRIC_STR][symbol] = safe_f
+        self.__position_sizer_data_dict[self.__POSITION_SIZE_METRIC_STR][symbol] = safe_f
         self.__position_sizer_data_dict[self.__CAPITAL_FRACTION][symbol] = safe_f
         self.__position_sizer_data_dict[self.__PERSISTANT_SAFE_F][symbol] = safe_f
         self.__position_sizer_data_dict[self.__CAR25][symbol] = monte_carlo_sims_df.iloc[-1][self.__CAR25]

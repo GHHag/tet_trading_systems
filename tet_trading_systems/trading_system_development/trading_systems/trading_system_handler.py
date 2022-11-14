@@ -2,8 +2,6 @@ import datetime as dt
 from typing import List, Dict
 import json
 
-import pandas as pd
-
 from TETrading.utils.metadata.trading_system_attributes import TradingSystemAttributes
 from TETrading.utils.metadata.market_state_enum import MarketState
 
@@ -41,6 +39,7 @@ def handle_trading_system(
     system_position_sizer: IPositionSizer = system_props.position_sizer(
         *system_props.position_sizer_args
     )
+
     for _ in range(system_props.required_runs):
         system_state_handler(
             *system_props.system_state_handler_call_args, pred_features_data,
@@ -92,6 +91,7 @@ def handle_ext_pos_sizer_trading_system(
     system_position_sizer: IPositionSizer = system_props.position_sizer(
         *system_props.position_sizer_args
     )
+
     for _ in range(system_props.required_runs):
         system_state_handler(
             *system_props.system_state_handler_call_args, pred_features_data,
@@ -99,7 +99,9 @@ def handle_ext_pos_sizer_trading_system(
             **system_props.system_state_handler_call_kwargs,
             **system_position_sizer.position_sizer_data_dict
         )
-        position_list, num_of_periods = systems_db.get_position_list(system_props.system_name, return_num_of_periods=True)
+        position_list, num_of_periods = systems_db.get_position_list(
+            system_props.system_name, return_num_of_periods=True
+        )
         system_position_sizer(
             position_list, num_of_periods,
             *system_props.position_sizer_call_args,
@@ -179,9 +181,9 @@ if __name__ == '__main__':
     mean_reversion_stocks_props = get_mean_reversion_stocks_props(INSTRUMENTS_DB)
     systems_props_list.append(mean_reversion_stocks_props)
  
-    #from tet_trading_systems.trading_system_development.trading_systems.trading_system_example import get_example_system_props
-    #example_system_props = get_example_system_props(INSTRUMENTS_DB)
-    #systems_props_list.append(example_system_props)
+    from tet_trading_systems.trading_system_development.trading_systems.trading_system_example import get_example_system_props
+    example_system_props = get_example_system_props(INSTRUMENTS_DB)
+    systems_props_list.append(example_system_props)
  
     #from system_development.systems_t1.low_vol_bo import get_low_vol_bo_props
     #low_vol_bo_props = get_low_vol_bo_props(INSTRUMENTS_DB)
@@ -198,7 +200,9 @@ if __name__ == '__main__':
     for system_props in systems_props_list:
         # system_props behöver innehålla funktionen som anropas haer
         #handle_trading_system(
-        handle_ext_pos_sizer_trading_system(
+        #handle_ext_pos_sizer_trading_system(
+        # implementera protocol för system_handler_function?
+        system_props.system_handler_function(
             system_props, start_dt, end_dt, 
             SYSTEMS_DB, CLIENT_DB, 
             time_series_db=TIME_SERIES_DB, 
