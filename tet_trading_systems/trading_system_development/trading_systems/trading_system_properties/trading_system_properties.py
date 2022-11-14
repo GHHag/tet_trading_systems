@@ -14,6 +14,8 @@ class TradingSystemProperties:
     preprocess_data_function: Callable
     preprocess_data_args: Tuple
     
+    system_handler_function: Callable
+    
     system_state_handler: TradingSystemStateHandler
     system_state_handler_args: Tuple
     system_state_handler_call_args: Tuple
