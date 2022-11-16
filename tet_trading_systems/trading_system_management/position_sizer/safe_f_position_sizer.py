@@ -3,7 +3,8 @@ from typing import Dict, List
 
 import pandas as pd
 
-from TETrading.utils.metadata.trading_system_attributes import TradingSystemAttributes
+from TETrading.data.metadata.trading_system_attributes import TradingSystemAttributes
+from TETrading.data.metadata.trading_system_metrics import TradingSystemMetrics
 from TETrading.position.position import Position
 from TETrading.position.position_manager import PositionManager
 from TETrading.utils.metric_functions import calculate_cagr
@@ -133,8 +134,7 @@ class SafeFPositionSizer(IPositionSizer):
         )
 
         # sort the 'max_drawdown_(%)' column and convert to a list
-        # haemta max_drawdown_(%) från metadata ist?
-        max_dds = sorted(monte_carlo_sims_df['max_drawdown_(%)'].to_list())
+        max_dds = sorted(monte_carlo_sims_df[TradingSystemMetrics.MAX_DRAWDOWN].to_list())
         # get the drawdown value at the percentile set to be the threshold at which to limit the 
         # probability of getting a max drawdown of that magnitude at when simulating sequences 
         # of the best estimate positions

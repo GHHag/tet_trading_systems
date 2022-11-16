@@ -154,12 +154,12 @@ def get_example_system_props(instruments_db: InstrumentsMongoDb):
             entry_logic_example, exit_logic_example,
             entry_args, exit_args
         ),
-        {},
+        {'run_monte_carlo_sims': False, 'num_of_sims': 2500},
         None, (), (),
         SafeFPositionSizer, (20, 0.8), (),
         {
             'plot_fig': False,
-            'num_of_sims': 100
+            'num_of_sims': 2500
         }
     )
 
