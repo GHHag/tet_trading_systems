@@ -5,10 +5,10 @@ from typing import Callable, Dict
 import pandas as pd
 import numpy as np
 
-from TETrading.utils.metadata.market_state_enum import MarketState
-from TETrading.utils.metadata.trading_system_attributes import TradingSystemAttributes
+from TETrading.data.metadata.market_state_enum import MarketState
+from TETrading.data.metadata.trading_system_attributes import TradingSystemAttributes
 from TETrading.position.position import Position
-from TETrading.position.position_sizer.position_sizer import PositionSizer
+#from TETrading.position.position_sizer.position_sizer import PositionSizer
 from TETrading.position.position_manager import PositionManager
 from TETrading.signal_events.signal_handler import SignalHandler
 
@@ -69,7 +69,7 @@ class MlTradingSystemStateHandler:
             )
 
     def _handle_enter_market_state(
-        self, entry_logic_function, entry_args, position_sizer: PositionSizer, 
+        self, entry_logic_function, entry_args,# position_sizer: PositionSizer, 
         capital=10000, num_of_sims=2500, yearly_periods=251, years_to_forecast=2, 
         insert_into_db=False, plot_fig=True, **kwargs
     ):
@@ -86,7 +86,7 @@ class MlTradingSystemStateHandler:
             
             position_manager = PositionManager(
                 self.__symbol, self.__num_testing_periods, capital, 
-                self.__market_state_data[position_sizer.position_size_metric_str],
+                #self.__market_state_data[position_sizer.position_size_metric_str],
                 asset_price_series=[float(close) for close in self.__df.loc[mask]['Close']]
             )
             position_manager.generate_positions(self._generate_position_sequence)
@@ -102,7 +102,7 @@ class MlTradingSystemStateHandler:
                     TradingSystemAttributes.MARKET_STATE: MarketState.ENTRY.value
                 }
             )
-            self.__signal_handler.add_pos_sizing_evaluation_data(
+            """ self.__signal_handler.add_pos_sizing_evaluation_data(
                 position_sizer(
                     self.__position_list, self.__num_testing_periods,
                     forecast_positions=avg_yearly_positions * (years_to_forecast + 1),
@@ -112,7 +112,7 @@ class MlTradingSystemStateHandler:
                     capital=capital, num_of_sims=num_of_sims, symbol=self.__symbol,
                     metrics_dict=position_manager.metrics.summary_data_dict
                 )
-            )
+            ) """
             
             self.__position_list.pop(0)
             self.__position_list.append(Position(capital))
@@ -172,7 +172,7 @@ class MlTradingSystemStateHandler:
 
     def __call__(
         self, entry_logic_function: Callable, exit_logic_function: Callable, 
-        position_sizer: PositionSizer, 
+        #position_sizer: PositionSizer, 
         entry_args: Dict[str, object], exit_args: Dict[str, object], 
         pred_features: np.ndarray, 
         date_format='%Y-%m-%d', capital=10000,
@@ -203,7 +203,7 @@ class MlTradingSystemStateHandler:
                         )
             else:
                 self._handle_enter_market_state(
-                    entry_logic_function, entry_args, position_sizer,
+                    entry_logic_function, entry_args, #position_sizer,
                     capital=capital, yearly_periods=avg_yearly_periods, years_to_forecast=years_to_forecast, 
                     insert_into_db=insert_into_db, plot_fig=plot_fig
                 )

@@ -3,6 +3,7 @@ from typing import Dict, List
 
 import pandas as pd
 
+from TETrading.data.metadata.trading_system_metrics import TradingSystemMetrics
 from TETrading.position.position import Position
 from TETrading.position.position_manager import PositionManager
 from TETrading.utils.metric_functions import calculate_cagr
@@ -114,9 +115,7 @@ class ExtPositionSizer(IPositionSizer):
             **kwargs
         )
 
-        # haemta max_drawdown_(%) från metadata istaellet? 
-        max_dds = sorted(monte_carlo_sims_df['max_drawdown_(%)'].to_list())
-
+        max_dds = sorted(monte_carlo_sims_df[TradingSystemMetrics.MAX_DRAWDOWN].to_list())
         dd_at_tolerated_threshold = max_dds[int(len(max_dds) * self.__max_dd_pctl_threshold)]
         if dd_at_tolerated_threshold < 1:
             dd_at_tolerated_threshold = 1

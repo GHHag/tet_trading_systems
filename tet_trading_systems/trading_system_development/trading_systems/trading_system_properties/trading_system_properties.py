@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from typing import Dict, Tuple, Callable
 
-from tet_trading_systems.trading_system_state_handler.trad_trading_system_state_handler import TradingSystemStateHandler
+from tet_trading_systems.trading_system_state_handler.trad_trading_system_state_handler \
+    import TradingSystemStateHandler
 from tet_trading_systems.trading_system_state_handler.portfolio.portfolio import Portfolio
 from tet_trading_systems.trading_system_management.position_sizer.position_sizer import IPositionSizer
 

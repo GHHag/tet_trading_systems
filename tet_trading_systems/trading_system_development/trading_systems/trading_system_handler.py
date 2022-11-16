@@ -2,8 +2,8 @@ import datetime as dt
 from typing import List, Dict
 import json
 
-from TETrading.utils.metadata.trading_system_attributes import TradingSystemAttributes
-from TETrading.utils.metadata.market_state_enum import MarketState
+from TETrading.data.metadata.trading_system_attributes import TradingSystemAttributes
+from TETrading.data.metadata.market_state_enum import MarketState
 
 from trading_system_properties.trading_system_properties import TradingSystemProperties
 from trading_system_properties.ml_trading_system_properties import MlTradingSystemProperties
@@ -198,9 +198,6 @@ if __name__ == '__main__':
     #ml_systems_props_list.append(example_ml_system_props)
 
     for system_props in systems_props_list:
-        # system_props behöver innehålla funktionen som anropas haer
-        #handle_trading_system(
-        #handle_ext_pos_sizer_trading_system(
         # implementera protocol för system_handler_function?
         system_props.system_handler_function(
             system_props, start_dt, end_dt, 
