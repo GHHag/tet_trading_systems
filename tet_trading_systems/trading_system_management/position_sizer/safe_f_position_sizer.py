@@ -1,6 +1,7 @@
 import random
 from typing import Dict, List
 
+import numpy as np
 import pandas as pd
 
 from TETrading.data.metadata.trading_system_attributes import TradingSystemAttributes
@@ -58,9 +59,12 @@ class SafeFPositionSizer(IPositionSizer):
         symbol='', print_dataframe=False, plot_fig=False, **kwargs
     ):
         monte_carlo_sims_df = pd.DataFrame()
-        equity_curves_list = []
         final_equity_list = []
         max_drawdowns_list = []
+        equity_curves_list = []
+        #final_equity_list = np.array([])
+        #max_drawdowns_list = np.array([])
+        #equity_curves_list = np.array([])
         sim_positions = None
 
         def generate_position_sequence(position_list, **kw):
@@ -79,10 +83,11 @@ class SafeFPositionSizer(IPositionSizer):
                 sim_positions.metrics.summary_data_dict, ignore_index=True
             )
             final_equity_list.append(float(sim_positions.metrics.equity_list[-1]))
-
+            #final_equity_list = np.append(final_equity_list, float(sim_positions.metrics.equity_list[-1]))
             max_drawdowns_list.append(sim_positions.metrics.max_drawdown)
-
+            #max_drawdowns_list = np.append(max_drawdowns_list, sim_positions.metrics.max_drawdown)
             equity_curves_list.append(sim_positions.metrics.equity_list)
+            #equity_curves_list = np.append(equity_curves_list, sim_positions.metrics.equity_list)
 
         final_equity_list = sorted(final_equity_list)
 

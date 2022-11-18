@@ -129,7 +129,8 @@ def get_example_system_props(instruments_db: InstrumentsMongoDb):
         'exit_param_period': 5
     }
     market_list_ids = [
-        instruments_db.get_market_list_id('omxs30')
+        #instruments_db.get_market_list_id('omxs30'),
+        instruments_db.get_market_list_id('omxs_large_caps')
     ]
     symbols_list = []
     for market_list_id in market_list_ids:
@@ -154,12 +155,12 @@ def get_example_system_props(instruments_db: InstrumentsMongoDb):
             entry_logic_example, exit_logic_example,
             entry_args, exit_args
         ),
-        {'run_monte_carlo_sims': False, 'num_of_sims': 2500},
+        {'run_monte_carlo_sims': False, 'num_of_sims': 2000},
         None, (), (),
         SafeFPositionSizer, (20, 0.8), (),
         {
-            'plot_fig': False,
-            'num_of_sims': 2500
+            'plot_fig': True,
+            'num_of_sims': 2000
         }
     )
 
