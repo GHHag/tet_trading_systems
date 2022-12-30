@@ -123,9 +123,12 @@ class SafeFPositionSizer(IPositionSizer):
         capital=10000, num_of_sims=2500, symbol='', plot_fig=False, 
         **kwargs
     ):
-        avg_yearly_positions = len(position_list) / (num_of_periods / avg_yearly_periods)
-        forecast_positions = avg_yearly_positions * (years_to_forecast * 1.5)
-        forecast_data_fraction = (avg_yearly_positions * years_to_forecast) / forecast_positions
+        try:
+            avg_yearly_positions = len(position_list) / (num_of_periods / avg_yearly_periods)
+            forecast_positions = avg_yearly_positions * (years_to_forecast * 1.5)
+            forecast_data_fraction = (avg_yearly_positions * years_to_forecast) / forecast_positions
+        except ZeroDivisionError:
+            return {}
 
         # sort positions on date
         position_list.sort(key=lambda pos: pos.entry_dt)
