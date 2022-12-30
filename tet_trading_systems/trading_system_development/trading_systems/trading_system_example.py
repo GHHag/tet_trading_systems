@@ -129,8 +129,9 @@ def get_example_system_props(instruments_db: InstrumentsMongoDb):
         'exit_param_period': 5
     }
     market_list_ids = [
-        #instruments_db.get_market_list_id('omxs30'),
-        instruments_db.get_market_list_id('omxs_large_caps')
+        #instruments_db.get_market_list_id('omxs30')
+        instruments_db.get_market_list_id('omxs_large_caps'),
+        instruments_db.get_market_list_id('omxs_mid_caps')
     ]
     symbols_list = []
     for market_list_id in market_list_ids:
@@ -159,15 +160,18 @@ def get_example_system_props(instruments_db: InstrumentsMongoDb):
         None, (), (),
         SafeFPositionSizer, (20, 0.8), (),
         {
-            'plot_fig': True,
-            'num_of_sims': 2000
+            'plot_fig': False,
+            'num_of_sims': 500
         }
     )
 
 
 if __name__ == '__main__':
-    SYSTEMS_DB = TetSystemsMongoDb('mongodb://localhost:27017/', 'systems_db')
-    INSTRUMENTS_DB = InstrumentsMongoDb('mongodb://localhost:27017/', 'instruments_db')
+    import tet_trading_systems.trading_system_development.trading_systems.env as env
+    #SYSTEMS_DB = TetSystemsMongoDb('mongodb://localhost:27017/', 'systems_db')
+    SYSTEMS_DB = TetSystemsMongoDb(env.ATLAS_MONGO_DB_URL, 'client_db')
+    #INSTRUMENTS_DB = InstrumentsMongoDb('mongodb://localhost:27017/', 'instruments_db')
+    INSTRUMENTS_DB = InstrumentsMongoDb(env.ATLAS_MONGO_DB_URL, 'client_db')
 
     start_dt = dt.datetime(1999, 1, 1)
     end_dt = dt.datetime(2011, 1, 1)
