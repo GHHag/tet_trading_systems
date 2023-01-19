@@ -93,30 +93,13 @@ def apply_vwap_from_n_period_low(
             min_price = min(price_array[index-period_param:index])
             min_price_index = np.where(price_array[index-period_param:index] == min_price)[0][-1]
             vwap = np.sum(
-                np.multiply(
-                    price_array[index-period_param:index][min_price_index:], 
+                    np.multiply(price_array[index-period_param:index][min_price_index:], 
                     volume_array[index-period_param:index][min_price_index:])
-                ) / \
-                np.sum(volume_array[index-period_param:index][min_price_index:])
-            #print(min_price)
-            #print(min_price_index)
-            #print(vwap)
-            #input('xxxxxxxxx')
-            #import matplotlib.pyplot as plt
-            #print(price_array[index-period_param:index][min_price_index:])
-            #print(vwap_list[index-period_param:index][min_price_index:])
-            #plt.plot(price_array[index-period_param:index][min_price_index:])
-            #plt.plot(vwap_list[index-period_param:index][min_price_index:])
-            #plt.show()
+                ) / np.sum(volume_array[index-period_param:index][min_price_index:])
 
             if vwap <= 0.1:
                 vwap_list.append(vwap_list[-1])
             else:
                 vwap_list.append(vwap)
-            #    np.sum(np.multiply(
-            #        price_array[index-min_price_index:index], volume_array[index-min_price_index:index]) / 
-            #        np.sum(volume_array[index-min_price_index:index])
-            #    )
-            #)
 
     df[f'VWAP_{period_param}{suffix}'] = vwap_list
