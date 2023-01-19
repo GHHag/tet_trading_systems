@@ -36,7 +36,7 @@ def entry_logic_example(df, *args, entry_args=None):
         condition is met or not.
     """
 
-    return df['Close'].iloc[-1] >= max(df['Close'].iloc[-entry_args['entry_param_period']:]), \
+    return df['Close'].iloc[-1] >= max(df['Close'].iloc[-entry_args['entry_period_param']:]), \
         'long'
 
 
@@ -71,7 +71,7 @@ def exit_logic_example(
         condition is met or not.
     """
 
-    return df['Close'].iloc[-1] <= min(df['Close'].iloc[-exit_args['exit_param_period']:]), \
+    return df['Close'].iloc[-1] <= min(df['Close'].iloc[-exit_args['exit_period_param']:]), \
         trail, trailing_exit_price
 
 
@@ -123,10 +123,10 @@ def get_example_system_props(instruments_db: InstrumentsMongoDb):
     system_name = 'example_system'
     benchmark_symbol = '^OMX'
     entry_args = {
-        'req_period_iters': 5, 'entry_param_period': 5
+        'req_period_iters': 5, 'entry_period_param': 5
     }
     exit_args = {
-        'exit_param_period': 5
+        'exit_period_param': 5
     }
     market_list_ids = [
         #instruments_db.get_market_list_id('omxs30')
