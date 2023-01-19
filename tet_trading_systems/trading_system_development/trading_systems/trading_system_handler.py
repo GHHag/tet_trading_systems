@@ -5,8 +5,10 @@ import json
 from TETrading.data.metadata.trading_system_attributes import TradingSystemAttributes
 from TETrading.data.metadata.market_state_enum import MarketState
 
-from trading_system_properties.trading_system_properties import TradingSystemProperties
-from trading_system_properties.ml_trading_system_properties import MlTradingSystemProperties
+from tet_trading_systems.trading_system_development.trading_systems.trading_system_properties.trading_system_properties \
+    import TradingSystemProperties
+from tet_trading_systems.trading_system_development.trading_systems.trading_system_properties.ml_trading_system_properties \
+    import MlTradingSystemProperties
 
 from tet_trading_systems.trading_system_management.position_sizer.position_sizer import IPositionSizer
 
@@ -155,12 +157,16 @@ def handle_trading_system_portfolio(
 
 if __name__ == '__main__':
     import tet_trading_systems.trading_system_development.trading_systems.env as env
-    INSTRUMENTS_DB = InstrumentsMongoDb(env.LOCALHOST_MONGO_DB_URL, 'instruments_db')
+    #INSTRUMENTS_DB = InstrumentsMongoDb(env.LOCALHOST_MONGO_DB_URL, 'instruments_db')
     TIME_SERIES_DB = TimeSeriesMongoDb(env.LOCALHOST_MONGO_DB_URL, 'time_series_db')
     SYSTEMS_DB = TetSystemsMongoDb(env.LOCALHOST_MONGO_DB_URL, 'systems_db')
     #CLIENT_DB = TetSystemsMongoDb(env.LOCALHOST_MONGO_DB_URL, 'client_db')
-    #CLIENT_DB = TetSystemsMongoDb(env.ATLAS_MONGO_DB_URL, 'client_db')
     CLIENT_DB = SYSTEMS_DB
+
+    INSTRUMENTS_DB = InstrumentsMongoDb(env.ATLAS_MONGO_DB_URL, 'client_db')
+    #TIME_SERIES_DB = TimeSeriesMongoDb(env.ATLAS_MONGO_DB_URL, 'client_db')
+    #SYSTEMS_DB = TetSystemsMongoDb(env.ATLAS_MONGO_DB_URL, 'systems_db')
+    CLIENT_DB = TetSystemsMongoDb(env.ATLAS_MONGO_DB_URL, 'client_db')
     
     ML_SYSTEMS_DB = TetSystemsMongoDb(env.LOCALHOST_MONGO_DB_URL, 'systems_db')
     ML_ORDERS_DB = ML_SYSTEMS_DB 
@@ -170,7 +176,6 @@ if __name__ == '__main__':
     start_dt = dt.datetime(2015, 9, 16)
     #start_dt = dt.datetime(1999, 1, 1)
     end_dt = dt.datetime.now()
-    #start_dt = dt.datetime(1999, 1, 1)
     #end_dt = dt.datetime(2011, 1, 1)
     #end_dt = dt.datetime(2022, 10, 27)
 
@@ -181,9 +186,9 @@ if __name__ == '__main__':
     mean_reversion_stocks_props = get_mean_reversion_stocks_props(INSTRUMENTS_DB)
     systems_props_list.append(mean_reversion_stocks_props)
  
-    from tet_trading_systems.trading_system_development.trading_systems.trading_system_example import get_example_system_props
-    example_system_props = get_example_system_props(INSTRUMENTS_DB)
-    systems_props_list.append(example_system_props)
+    #from tet_trading_systems.trading_system_development.trading_systems.trading_system_example import get_example_system_props
+    #example_system_props = get_example_system_props(INSTRUMENTS_DB)
+    #systems_props_list.append(example_system_props)
  
     #from system_development.systems_t1.low_vol_bo import get_low_vol_bo_props
     #low_vol_bo_props = get_low_vol_bo_props(INSTRUMENTS_DB)
