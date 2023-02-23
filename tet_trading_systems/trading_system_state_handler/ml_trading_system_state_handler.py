@@ -8,7 +8,6 @@ import numpy as np
 from TETrading.data.metadata.market_state_enum import MarketState
 from TETrading.data.metadata.trading_system_attributes import TradingSystemAttributes
 from TETrading.position.position import Position
-#from TETrading.position.position_sizer.position_sizer import PositionSizer
 from TETrading.position.position_manager import PositionManager
 from TETrading.signal_events.signal_handler import SignalHandler
 
@@ -69,9 +68,9 @@ class MlTradingSystemStateHandler:
             )
 
     def _handle_enter_market_state(
-        self, entry_logic_function, entry_args,# position_sizer: PositionSizer, 
-        capital=10000, num_of_sims=2500, yearly_periods=251, years_to_forecast=2, 
-        insert_into_db=False, plot_fig=True, **kwargs
+        self, entry_logic_function, entry_args,
+        capital=10000, num_of_sims=2500, plot_fig=True, 
+        **kwargs
     ):
         entry_signal, direction = entry_logic_function(
             self.__df.iloc[-entry_args['entry_period_lookback']:], entry_args
@@ -82,11 +81,9 @@ class MlTradingSystemStateHandler:
             # self.__position_lists entry_dt and the last elements exit_signal_dt
             mask = (self.__df['Date'] > str(self.__position_list[0].entry_dt)) & \
                 (self.__df['Date'] <= str(self.__position_list[-1].exit_signal_dt))
-            avg_yearly_positions = int(len(self.__position_list) / (self.__num_testing_periods / yearly_periods) + 0.5)
             
             position_manager = PositionManager(
-                self.__symbol, self.__num_testing_periods, capital, 
-                #self.__market_state_data[position_sizer.position_size_metric_str],
+                self.__symbol, self.__num_testing_periods, capital, 1.0,
                 asset_price_series=[float(close) for close in self.__df.loc[mask]['Close']]
             )
             position_manager.generate_positions(self._generate_position_sequence)
@@ -102,17 +99,6 @@ class MlTradingSystemStateHandler:
                     TradingSystemAttributes.MARKET_STATE: MarketState.ENTRY.value
                 }
             )
-            """ self.__signal_handler.add_pos_sizing_evaluation_data(
-                position_sizer(
-                    self.__position_list, self.__num_testing_periods,
-                    forecast_positions=avg_yearly_positions * (years_to_forecast + 1),
-                    forecast_data_fraction=(avg_yearly_positions * years_to_forecast) / 
-                                            (avg_yearly_positions * (years_to_forecast + 1)),
-                    persistant_safe_f=self.__market_state_data[position_sizer.position_size_metric_str],
-                    capital=capital, num_of_sims=num_of_sims, symbol=self.__symbol,
-                    metrics_dict=position_manager.metrics.summary_data_dict
-                )
-            ) """
             
             self.__position_list.pop(0)
             self.__position_list.append(Position(capital))
@@ -172,13 +158,10 @@ class MlTradingSystemStateHandler:
 
     def __call__(
         self, entry_logic_function: Callable, exit_logic_function: Callable, 
-        #position_sizer: PositionSizer, 
         entry_args: Dict[str, object], exit_args: Dict[str, object], 
         pred_features: np.ndarray, 
-        date_format='%Y-%m-%d', capital=10000,
-        tolerated_pct_max_dd=10, dd_percentile_threshold=0.85, 
-        years_to_forecast=2, avg_yearly_periods=251,
-        plot_fig=False, insert_into_db=False, **kwargs
+        date_format='%Y-%m-%d', capital=10000, plot_fig=False, insert_into_db=False, 
+        **kwargs
     ):
         if not 'entry_period_lookback' in entry_args.keys() or \
             not 'exit_period_lookback' in exit_args.keys():
@@ -203,9 +186,8 @@ class MlTradingSystemStateHandler:
                         )
             else:
                 self._handle_enter_market_state(
-                    entry_logic_function, entry_args, #position_sizer,
-                    capital=capital, yearly_periods=avg_yearly_periods, years_to_forecast=years_to_forecast, 
-                    insert_into_db=insert_into_db, plot_fig=plot_fig
+                    entry_logic_function, entry_args,
+                    capital=capital, plot_fig=plot_fig
                 )
 
             print(self.__signal_handler)
