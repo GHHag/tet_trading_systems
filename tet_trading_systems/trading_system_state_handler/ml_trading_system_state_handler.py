@@ -256,7 +256,7 @@ class MlTradingSystemStateHandler:
                         self._handle_exit_market_state(instrument_data, exit_logic_function, exit_args)
                     else:
                         if insert_into_db:
-                            # Position objects in json format will be inserted to database after being exited
+                            # Position objects in json format are inserted into database after being exited
                             self.__systems_db.insert_single_symbol_position_list(
                                 self.__system_name, instrument_data.symbol, 
                                 instrument_data.position_list, instrument_data.num_testing_periods,
