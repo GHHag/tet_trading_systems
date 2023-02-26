@@ -139,7 +139,7 @@ class MlTradingSystemStateHandler:
 
     def _handle_enter_market_state(
         self, instrument_data: MlSystemInstrumentData, entry_logic_function, entry_args,
-        capital=10000, num_of_sims=2500, plot_fig=True, 
+        capital=10000, num_of_sims=2500, yearly_periods=251, plot_fig=True, 
         **kwargs
     ):
         def generate_position_sequence(**kwargs):
@@ -155,6 +155,9 @@ class MlTradingSystemStateHandler:
             # position_list's entry_dt and the last elements exit_signal_dt
             mask = (instrument_data.dataframe['Date'] > str(instrument_data.position_list[0].entry_dt)) & \
                 (instrument_data.dataframe['Date'] <= str(instrument_data.position_list[-1].exit_signal_dt))
+            avg_yearly_positions = int(
+                len(instrument_data.position_list) / (instrument_data.num_testing_periods / yearly_periods) + 0.5
+            )
             
             position_manager = PositionManager(
                 instrument_data.symbol, instrument_data.num_testing_periods, capital, 1.0,
