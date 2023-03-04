@@ -8,6 +8,7 @@ from sklearn.pipeline import Pipeline
 
 from TETrading.data.metadata.market_state_enum import MarketState
 from TETrading.data.metadata.trading_system_attributes import TradingSystemAttributes
+from TETrading.data.metadata.trading_system_metrics import TradingSystemMetrics
 from TETrading.position.position import Position
 from TETrading.position.position_manager import PositionManager
 from TETrading.signal_events.signal_handler import SignalHandler
@@ -175,6 +176,10 @@ class MlTradingSystemStateHandler:
                     TradingSystemAttributes.DIRECTION: direction,
                     TradingSystemAttributes.MARKET_STATE: MarketState.ENTRY.value
                 }
+            )
+            self.__signal_handler.add_system_evaluation_data(
+                position_manager.metrics.summary_data_dict,
+                TradingSystemMetrics.system_evaluation_fields
             )
             
             instrument_data.position_list.pop(0)
