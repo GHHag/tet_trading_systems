@@ -202,31 +202,30 @@ if __name__ == '__main__':
 
     PORTFOLIOS_DB = TetPortfolioMongoDb(env.LOCALHOST_MONGO_DB_URL, 'client_db')
 
-    #start_dt = dt.datetime(2015, 9, 16)
-    start_dt = dt.datetime(1999, 1, 1)
-    #end_dt = dt.datetime.now()
-    end_dt = dt.datetime(2011, 1, 1)
-    #end_dt = dt.datetime(2022, 10, 27)
+    #start_dt = dt.datetime(1999, 1, 1)
+    #end_dt = dt.datetime(2011, 1, 1)
+    start_dt = dt.datetime(2015, 9, 16)
+    end_dt = dt.datetime.now()
 
     systems_props_list: List[TradingSystemProperties] = []
     ml_systems_props_list: List[MlTradingSystemProperties] = []
 
-    #from tet_trading_systems.trading_system_development.trading_systems.live_systems.mean_reversion_stocks import get_mean_reversion_stocks_props
-    #mean_reversion_stocks_props = get_mean_reversion_stocks_props(INSTRUMENTS_DB)
-    #systems_props_list.append(mean_reversion_stocks_props)
- 
     #from tet_trading_systems.trading_system_development.trading_systems.trading_system_example import get_example_system_props
     #example_system_props = get_example_system_props(INSTRUMENTS_DB)
     #systems_props_list.append(example_system_props)
+ 
+    from tet_trading_systems.trading_system_development.trading_systems.live_systems.mean_reversion_stocks import get_mean_reversion_stocks_props
+    mean_reversion_stocks_props = get_mean_reversion_stocks_props(INSTRUMENTS_DB)
+    systems_props_list.append(mean_reversion_stocks_props)
  
     #from system_development.systems_t1.low_vol_bo import get_low_vol_bo_props
     #low_vol_bo_props = get_low_vol_bo_props(INSTRUMENTS_DB)
     #systems_props_list.append(low_vol_bo_props)
 
-    from tet_trading_systems.trading_system_development.trading_systems.ml_trading_system_example import get_example_ml_system_props
-    example_ml_system_props = get_example_ml_system_props(INSTRUMENTS_DB)
+    #from tet_trading_systems.trading_system_development.trading_systems.ml_trading_system_example import get_example_ml_system_props
+    #example_ml_system_props = get_example_ml_system_props(INSTRUMENTS_DB)
     #ml_systems_props_list.append(example_ml_system_props)
-    systems_props_list.append(example_ml_system_props)
+    #systems_props_list.append(example_ml_system_props)
 
     #from system_development.systems_t1.omxs_ml_system import get_omxs_ml_system_props
     #omxs_ml_system_props = get_omxs_ml_system_props(INSTRUMENTS_DB)

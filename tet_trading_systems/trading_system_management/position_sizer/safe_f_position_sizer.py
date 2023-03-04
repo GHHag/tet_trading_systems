@@ -117,6 +117,8 @@ class SafeFPositionSizer(IPositionSizer):
         capital=10000, num_of_sims=2500, symbol='', plot_fig=False, 
         **kwargs
     ):
+        position_list = position_list if position_list[-1].entry_dt else position_list[:-1]
+
         try:
             avg_yearly_positions = len(position_list) / (num_of_periods / avg_yearly_periods)
             forecast_positions = avg_yearly_positions * (years_to_forecast * 1.5)
