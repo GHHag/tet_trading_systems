@@ -4,6 +4,9 @@ from typing import Dict, List
 import numpy as np
 import pandas as pd
 
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 from TETrading.data.metadata.trading_system_attributes import TradingSystemAttributes
 from TETrading.data.metadata.trading_system_metrics import TradingSystemMetrics
 from TETrading.position.position import Position
