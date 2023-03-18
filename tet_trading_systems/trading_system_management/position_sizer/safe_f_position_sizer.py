@@ -140,7 +140,7 @@ class SafeFPositionSizer(IPositionSizer):
             symbol=symbol, plot_fig=plot_fig 
         )
 
-        # sort the 'max_drawdown_(%)' column and convert to a list
+        # sort the Max drawdown column and convert to a list
         max_dds = sorted(monte_carlo_sims_df[TradingSystemMetrics.MAX_DRAWDOWN].to_list())
         # get the drawdown value at the percentile set to be the threshold at which to limit the 
         # probability of getting a max drawdown of that magnitude at when simulating sequences 
