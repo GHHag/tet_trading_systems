@@ -156,7 +156,7 @@ def get_example_system_props(instruments_db: InstrumentsMongoDb):
             entry_logic_example, exit_logic_example,
             entry_args, exit_args
         ),
-        {'run_monte_carlo_sims': False, 'num_of_sims': 2000},
+        {'run_monte_carlo_sims': True, 'num_of_sims': 1000},
         None, (), (),
         SafeFPositionSizer, (20, 0.8), (),
         {
@@ -191,6 +191,9 @@ if __name__ == '__main__':
         entry_logic_example, exit_logic_example,
         system_props.preprocess_data_args[-2], 
         system_props.preprocess_data_args[-1], 
-        plot_fig=False,
+        run_monte_carlo_sims=True,
+        plot_fig=True,
+        num_of_sims=100,
+        plot_monte_carlo=True,
         systems_db=SYSTEMS_DB, client_db=SYSTEMS_DB, insert_into_db=False
     )

@@ -92,10 +92,9 @@ def apply_vwap_from_n_period_low(
         else:
             min_price = min(price_array[index-period_param:index])
             min_price_index = np.where(price_array[index-period_param:index] == min_price)[0][-1]
-            vwap = np.sum(
-                    np.multiply(price_array[index-period_param:index][min_price_index:], 
-                    volume_array[index-period_param:index][min_price_index:])
-                ) / np.sum(volume_array[index-period_param:index][min_price_index:])
+            # hantera null values
+            vwap = np.sum(np.multiply(price_array[index-period_param:index][min_price_index:], volume_array[index-period_param:index][min_price_index:])) / \
+            np.sum(volume_array[index-period_param:index][min_price_index:])
 
             if vwap <= 0.1:
                 vwap_list.append(vwap_list[-1])
