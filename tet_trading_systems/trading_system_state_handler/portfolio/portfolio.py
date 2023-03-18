@@ -3,7 +3,7 @@ from typing import Union
 
 from bson import json_util
 
-from TETrading.utils.metadata.market_state_enum import MarketState
+from TETrading.data.metadata.market_state_enum import MarketState
 
 from tet_doc_db.doc_database_meta_classes.tet_systems_doc_db import ITetSystemsDocumentDatabase
 from tet_doc_db.doc_database_meta_classes.tet_portfolio_doc_db import ITetPortfolioDocumentDatabase

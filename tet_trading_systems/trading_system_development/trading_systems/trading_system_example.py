@@ -8,13 +8,12 @@ from securities_db_py_dal.dal import price_data_get_req
 from tet_doc_db.tet_mongo_db.systems_mongo_db import TetSystemsMongoDb
 from tet_doc_db.instruments_mongo_db.instruments_mongo_db import InstrumentsMongoDb
 
-from TETrading.position.position_sizer.ext_position_sizer import ExtPositionSizer
-
-from trading_system_properties.trading_system_properties import TradingSystemProperties
-
+from tet_trading_systems.trading_system_development.trading_systems.trading_system_properties.trading_system_properties \
+    import TradingSystemProperties
+from tet_trading_systems.trading_system_development.trading_systems.run_trading_systems import run_trading_system
+from tet_trading_systems.trading_system_development.trading_systems.trading_system_handler import handle_trading_system
+from tet_trading_systems.trading_system_management.position_sizer.safe_f_position_sizer import SafeFPositionSizer
 from tet_trading_systems.trading_system_state_handler.trad_trading_system_state_handler import TradingSystemStateHandler
-
-from tet_trading_systems.trading_system_development.trading_systems.run_trading_systems import run_ext_pos_sizer_trading_system
 
 
 def entry_logic_example(df, *args, entry_args=None):
@@ -37,7 +36,7 @@ def entry_logic_example(df, *args, entry_args=None):
         condition is met or not.
     """
 
-    return df['Close'].iloc[-1] >= max(df['Close'].iloc[-entry_args['entry_param_period']:]), \
+    return df['Close'].iloc[-1] >= max(df['Close'].iloc[-entry_args['entry_period_param']:]), \
         'long'
 
 
@@ -72,7 +71,7 @@ def exit_logic_example(
         condition is met or not.
     """
 
-    return df['Close'].iloc[-1] <= min(df['Close'].iloc[-exit_args['exit_param_period']:]), \
+    return df['Close'].iloc[-1] <= min(df['Close'].iloc[-exit_args['exit_period_param']:]), \
         trail, trailing_exit_price
 
 
@@ -124,13 +123,15 @@ def get_example_system_props(instruments_db: InstrumentsMongoDb):
     system_name = 'example_system'
     benchmark_symbol = '^OMX'
     entry_args = {
-        'req_period_iters': 5, 'entry_param_period': 5
+        'req_period_iters': 5, 'entry_period_param': 5
     }
     exit_args = {
-        'exit_param_period': 5
+        'exit_period_param': 5
     }
     market_list_ids = [
-        instruments_db.get_market_list_id('omxs30')
+        #instruments_db.get_market_list_id('omxs30')
+        instruments_db.get_market_list_id('omxs_large_caps'),
+        instruments_db.get_market_list_id('omxs_mid_caps')
     ]
     symbols_list = []
     for market_list_id in market_list_ids:
@@ -140,27 +141,37 @@ def get_example_system_props(instruments_db: InstrumentsMongoDb):
             )
         )
 
-    return TradingSystemProperties( 
+    return TradingSystemProperties(
+        system_name, 2,
         preprocess_data,
         (
             symbols_list,
             benchmark_symbol, price_data_get_req,
             entry_args, exit_args
         ),
-        TradingSystemStateHandler,(system_name, None),
+        handle_trading_system,
+        TradingSystemStateHandler, (system_name, None),
         (
-            run_ext_pos_sizer_trading_system,
+            run_trading_system,
             entry_logic_example, exit_logic_example,
-            ExtPositionSizer('sharpe_ratio'),
             entry_args, exit_args
         ),
-        None, (), ()
+        {'run_monte_carlo_sims': True, 'num_of_sims': 1000},
+        None, (), (),
+        SafeFPositionSizer, (20, 0.8), (),
+        {
+            'plot_fig': False,
+            'num_of_sims': 500
+        }
     )
 
 
 if __name__ == '__main__':
-    SYSTEMS_DB = TetSystemsMongoDb('mongodb://localhost:27017/', 'systems_db')
-    INSTRUMENTS_DB = InstrumentsMongoDb('mongodb://localhost:27017/', 'instruments_db')
+    import tet_trading_systems.trading_system_development.trading_systems.env as env
+    #SYSTEMS_DB = TetSystemsMongoDb('mongodb://localhost:27017/', 'systems_db')
+    SYSTEMS_DB = TetSystemsMongoDb(env.ATLAS_MONGO_DB_URL, 'client_db')
+    #INSTRUMENTS_DB = InstrumentsMongoDb('mongodb://localhost:27017/', 'instruments_db')
+    INSTRUMENTS_DB = InstrumentsMongoDb(env.ATLAS_MONGO_DB_URL, 'client_db')
 
     start_dt = dt.datetime(1999, 1, 1)
     end_dt = dt.datetime(2011, 1, 1)
@@ -175,12 +186,14 @@ if __name__ == '__main__':
         start_dt, end_dt
     )
 
-    run_ext_pos_sizer_trading_system(
+    run_trading_system(
         df_dict, 'example_system',
         entry_logic_example, exit_logic_example,
-        ExtPositionSizer('sharpe_ratio'),
         system_props.preprocess_data_args[-2], 
         system_props.preprocess_data_args[-1], 
+        run_monte_carlo_sims=True,
         plot_fig=True,
+        num_of_sims=100,
+        plot_monte_carlo=True,
         systems_db=SYSTEMS_DB, client_db=SYSTEMS_DB, insert_into_db=False
     )
