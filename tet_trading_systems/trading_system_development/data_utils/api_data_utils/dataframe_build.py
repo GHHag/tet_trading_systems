@@ -16,7 +16,6 @@ def build_dataframe(
         for symbol in symbols_list
     }
     
-    #benchmark_df = None
     if benchmark_symbol and benchmark_data_retrieve_func:
         benchmark_df = pd.json_normalize(
             benchmark_data_retrieve_func(benchmark_symbol, *args, **kwargs)['data']
@@ -59,18 +58,6 @@ def build_dataframe(
 def get_split_dataframes(
     df, instrument_list, regex=r'^[\w\d\%\_]*', unfiltered_columns=None
 ):
-    """
-    Splits given Pandas DataFrame on columns filtered by a regular expression
-
-    :param df: Pandas DataFrame to be split up
-    :param instrument_list: list of intruments to split on
-    :param regex: Regular expression to filter by, default value=r'^[\w\d\%\_]*'
-    :param unfiltered_columns: Columns in the DataFrame to be added back after being 
-        filtered out
-    :return: Dict with given 'instrument_list' elements as keys and filtered Pandas 
-        DataFrame as values
-    """
-
     split_df_dict = {}
 
     for ticker in instrument_list:

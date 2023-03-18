@@ -12,5 +12,5 @@ setup(
     author='GHHag',
     packages=find_packages(),
     include_package_data=True,
-    install_requires=['pandas', 'numpy', 'matplotlib', 'sklearn']#, 'TETrading', 'securities_pg_db', 'tet_doc_db'] 
+    install_requires=['pandas==1.5.2', 'numpy', 'matplotlib', 'sklearn']#, 'TETrading', 'securities_pg_db', 'tet_doc_db'] 
 )

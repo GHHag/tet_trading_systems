@@ -17,15 +17,12 @@ from securities_db_py_dal.dal import price_data_get_req
 from tet_doc_db.tet_mongo_db.systems_mongo_db import TetSystemsMongoDb
 from tet_doc_db.instruments_mongo_db.instruments_mongo_db import InstrumentsMongoDb
 
-from TETrading.position.position_sizer.safe_f_position_sizer import SafeFPositionSizer
-
-from trading_system_properties.ml_trading_system_properties import MlTradingSystemProperties
-
+from tet_trading_systems.trading_system_development.trading_systems.trading_system_properties.ml_trading_system_properties import MlTradingSystemProperties
+from tet_trading_systems.trading_system_development.trading_systems.run_trading_systems import run_trading_system
+from tet_trading_systems.trading_system_development.trading_systems.trading_system_handler import handle_ml_trading_system
 from tet_trading_systems.trading_system_state_handler.ml_trading_system_state_handler import MlTradingSystemStateHandler 
-
+from tet_trading_systems.trading_system_management.position_sizer.safe_f_position_sizer import SafeFPositionSizer
 from tet_trading_systems.trading_system_development.ml_utils.ml_system_utils import serialize_models
-from tet_trading_systems.trading_system_development.trading_systems.run_trading_systems \
-    import run_multiple_run_req_pos_sizer_trading_system
 
 
 def ml_entry_classification(df, *args, entry_args=None):
@@ -89,8 +86,8 @@ def create_reg_models(
         y_test = y[int(X.shape[0]*0.7):]"""
         ts_split = TimeSeriesSplit(n_splits=3)
 
-        optimizable_params1 = [0]
-        optimizable_params2 = [0]
+        optimizable_params1 = np.array([0])
+        optimizable_params2 = np.array([0])
         models_df_dict[symbol] = None
         try:
             for tr_index, val_index in ts_split.split(X):
@@ -178,8 +175,8 @@ def create_classification_models(
         y_test = y[int(X.shape[0]*0.7):]"""
         ts_split = TimeSeriesSplit(n_splits=3)
 
-        optimizable_params1 = [0]
-        optimizable_params2 = [0]
+        optimizable_params1 = np.array([0])
+        optimizable_params2 = np.array([0])
         models_df_dict[symbol] = None
         try:
             for tr_index, val_index in ts_split.split(X):
@@ -204,6 +201,8 @@ def create_classification_models(
                         pred_df = df.iloc[-len(X_test):].copy()
                         pred_df['pred'] = y_pred.tolist()
                         pred_precision = precision_score(y_test, y_pred)
+                        tn, fp, fn, tp = confusion_matrix(y_test, y_pred).ravel()
+                        print(f'TN: {tn}, FP: {fp}, FN: {fn}, TP: {tp}')
                         print(
                             f'Accuracy: {cf_score_dict["Accuracy"]}\n'
                             f'Classification report: \n'
@@ -348,20 +347,26 @@ def get_example_ml_system_props(instruments_db: InstrumentsMongoDb, target_perio
     ) """
 
     return MlTradingSystemProperties( 
+        system_name, 1,
         preprocess_data,
         (
             symbols_list, '^OMX', price_data_get_req
         ),
-        MlTradingSystemStateHandler,
-        (system_name, ),
+        handle_ml_trading_system,
+        MlTradingSystemStateHandler, (system_name, ),
         (
             #ml_entry_regression, ml_exit_regression,
             ml_entry_classification, ml_exit_classification,
-            SafeFPositionSizer('sharpe_ratio', 15, 0.85),
             {'req_period_iters': target_period, 'entry_period_lookback': target_period},
             {'exit_period_lookback': target_period}
         ),
+        {},
         None, (), (),
+        SafeFPositionSizer, (20, 0.8), (),
+        {
+            'forecast_data_fraction': 0.7,
+            'num_of_sims': 100
+        },
         symbols_list
     )
 
@@ -389,14 +394,13 @@ if __name__ == '__main__':
     ):
         raise Exception('Failed to create model')
 
-    run_multiple_run_req_pos_sizer_trading_system(
+    run_trading_system(
         model_data_dict, 'example_ml_system', 
         #ml_entry_regression, ml_exit_regression, 
         ml_entry_classification, ml_exit_classification, 
-        SafeFPositionSizer('sharpe_ratio', 15, 0.85),
         {'req_period_iters': target_period, 'entry_period_lookback': target_period}, 
         {'exit_period_lookback'}, 
         market_state_null_default=True,
-        plot_fig=False,
+        plot_fig=True,
         systems_db=SYSTEMS_DB, client_db=SYSTEMS_DB, insert_into_db=True
     )

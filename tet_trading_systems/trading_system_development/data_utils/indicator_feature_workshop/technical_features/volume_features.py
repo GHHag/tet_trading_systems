@@ -54,3 +54,51 @@ def apply_volume_balance(
             volume_balance_mean.append(np.nan)
 
     df[f'Volume_balance_{period_param}{suffix}'] = volume_balance_mean
+
+
+def apply_vwap(
+    df: pd.DataFrame, period_param, 
+    col_name_price='Close', col_name_volume='Volume', suffix=''
+):
+    vwap_list = []
+    
+    price_array = df[col_name_price].to_numpy()
+    volume_array = df[col_name_volume].to_numpy()
+    for index, row in enumerate(df.itertuples()):
+        if index < period_param:
+            vwap_list.append(np.nan)
+            continue
+        else:
+            vwap_list.append(
+                np.sum(np.multiply(price_array[index-period_param:index], volume_array[index-period_param:index])) / 
+                np.sum(volume_array[index-period_param:index])
+            )
+
+    df[f'VWAP_{period_param}{suffix}'] = vwap_list
+
+
+def apply_vwap_from_n_period_low(
+    df: pd.DataFrame, period_param, 
+    col_name_price='Close', col_name_volume='Volume', suffix=''
+):
+    vwap_list = []
+    
+    price_array = df[col_name_price].to_numpy()
+    volume_array = df[col_name_volume].to_numpy()
+    for index, row in enumerate(df.itertuples()):
+        if index < period_param:
+            vwap_list.append(np.nan)
+            continue
+        else:
+            min_price = min(price_array[index-period_param:index])
+            min_price_index = np.where(price_array[index-period_param:index] == min_price)[0][-1]
+            # hantera null values
+            vwap = np.sum(np.multiply(price_array[index-period_param:index][min_price_index:], volume_array[index-period_param:index][min_price_index:])) / \
+            np.sum(volume_array[index-period_param:index][min_price_index:])
+
+            if vwap <= 0.1:
+                vwap_list.append(vwap_list[-1])
+            else:
+                vwap_list.append(vwap)
+
+    df[f'VWAP_{period_param}{suffix}'] = vwap_list
