@@ -1,3 +1,6 @@
+import os
+import sys
+import importlib
 import datetime as dt
 from typing import List, Dict
 import json
@@ -128,15 +131,44 @@ def handle_ml_trading_system(
     #if time_series_db:
     #   time_series_db.insert_pandas_time_series_data(data)
 
-    for symbol in system_props.system_instruments_list:
-        system_state_handler = system_props.system_state_handler(
-            *system_props.system_state_handler_args, symbol, systems_db, data[symbol]
-        )
+    system_state_handler = system_props.system_state_handler(
+        *system_props.system_state_handler_args, data, pred_features_data, systems_db,
+    )
+    system_position_sizer: IPositionSizer = system_props.position_sizer(
+        *system_props.position_sizer_args
+    )
+
+    for _ in range(system_props.required_runs):
         system_state_handler(
-            *system_props.system_state_handler_call_args, pred_features_data[symbol],
+            *system_props.system_state_handler_call_args,
             plot_fig=plot_fig, 
-            client_db=client_db, insert_into_db=insert_into_db
+            client_db=client_db, insert_into_db=insert_into_db,
+            **system_props.system_state_handler_call_kwargs,
+            **system_position_sizer.position_sizer_data_dict
         )
+        market_states_data: List[Dict] = json.loads(
+            systems_db.get_market_state_data(
+                system_props.system_name, MarketState.ENTRY.value
+            )
+        )
+
+        for data_dict in market_states_data:
+            position_list, num_of_periods = systems_db.get_single_symbol_position_list(
+                system_props.system_name, data_dict[TradingSystemAttributes.SYMBOL],
+                return_num_of_periods=True
+            )
+            system_position_sizer(
+                position_list, num_of_periods,
+                *system_props.position_sizer_call_args,
+                symbol=data_dict[TradingSystemAttributes.SYMBOL], 
+                **system_props.position_sizer_call_kwargs,
+                **system_position_sizer.position_sizer_data_dict
+            )
+
+    pos_sizer_data_dict = system_position_sizer.get_position_sizer_data_dict()
+    systems_db.insert_market_state_data(
+        system_props.system_name, json.dumps(pos_sizer_data_dict)
+    )
 
 
 def handle_trading_system_portfolio(
@@ -157,50 +189,49 @@ def handle_trading_system_portfolio(
 
 if __name__ == '__main__':
     import tet_trading_systems.trading_system_development.trading_systems.env as env
-    #INSTRUMENTS_DB = InstrumentsMongoDb(env.LOCALHOST_MONGO_DB_URL, 'instruments_db')
-    TIME_SERIES_DB = TimeSeriesMongoDb(env.LOCALHOST_MONGO_DB_URL, 'time_series_db')
-    SYSTEMS_DB = TetSystemsMongoDb(env.LOCALHOST_MONGO_DB_URL, 'systems_db')
-    #CLIENT_DB = TetSystemsMongoDb(env.LOCALHOST_MONGO_DB_URL, 'client_db')
-    CLIENT_DB = SYSTEMS_DB
 
-    INSTRUMENTS_DB = InstrumentsMongoDb(env.ATLAS_MONGO_DB_URL, 'client_db')
-    #TIME_SERIES_DB = TimeSeriesMongoDb(env.ATLAS_MONGO_DB_URL, 'client_db')
-    #SYSTEMS_DB = TetSystemsMongoDb(env.ATLAS_MONGO_DB_URL, 'systems_db')
-    CLIENT_DB = TetSystemsMongoDb(env.ATLAS_MONGO_DB_URL, 'client_db')
+    # make live systems dir a passable argument?
+    LIVE_SYSTEMS_DIR = 'live_systems'
+    __globals = globals()
+    sys.path.append(os.path.join(sys.path[0], LIVE_SYSTEMS_DIR))
+    trading_system_modules = []
+    for file in os.listdir(f'{sys.path[0]}/{LIVE_SYSTEMS_DIR}'):
+        if file == '__init__.py':
+            continue
+        module_name = file[:-3]
+        try:
+            __globals[module_name] = importlib.import_module(module_name)
+            trading_system_modules.append(module_name)
+        except ModuleNotFoundError:
+            pass
+
+    #INSTRUMENTS_DB = InstrumentsMongoDb(env.LOCALHOST_MONGO_DB_URL, env.INSTRUMENTS_DB)
+    TIME_SERIES_DB = TimeSeriesMongoDb(env.LOCALHOST_MONGO_DB_URL, env.TIME_SERIES_DB)
+    SYSTEMS_DB = TetSystemsMongoDb(env.LOCALHOST_MONGO_DB_URL, env.SYSTEMS_DB)
+    CLIENT_DB = TetSystemsMongoDb(env.LOCALHOST_MONGO_DB_URL, env.CLIENT_DB)
+    #CLIENT_DB = SYSTEMS_DB
+
+    INSTRUMENTS_DB = InstrumentsMongoDb(env.ATLAS_MONGO_DB_URL, env.CLIENT_DB)
+    #TIME_SERIES_DB = TimeSeriesMongoDb(env.ATLAS_MONGO_DB_URL, env.CLIENT_DB)
+    #SYSTEMS_DB = TetSystemsMongoDb(env.ATLAS_MONGO_DB_URL, env.CLIENT_DB)
+    #CLIENT_DB = TetSystemsMongoDb(env.ATLAS_MONGO_DB_URL, env.CLIENT_DB)
     
-    ML_SYSTEMS_DB = TetSystemsMongoDb(env.LOCALHOST_MONGO_DB_URL, 'systems_db')
+    #ML_SYSTEMS_DB = TetSystemsMongoDb(env.LOCALHOST_MONGO_DB_URL, env.CLIENT_DB)
+    ML_SYSTEMS_DB = TetSystemsMongoDb(env.LOCALHOST_MONGO_DB_URL, env.SYSTEMS_DB)
     ML_ORDERS_DB = ML_SYSTEMS_DB 
 
-    PORTFOLIOS_DB = TetPortfolioMongoDb(env.LOCALHOST_MONGO_DB_URL, 'client_db')
+    PORTFOLIOS_DB = TetPortfolioMongoDb(env.LOCALHOST_MONGO_DB_URL, env.CLIENT_DB)
 
-    start_dt = dt.datetime(2015, 9, 16)
     #start_dt = dt.datetime(1999, 1, 1)
-    end_dt = dt.datetime.now()
     #end_dt = dt.datetime(2011, 1, 1)
-    #end_dt = dt.datetime(2022, 10, 27)
+    start_dt = dt.datetime(2015, 9, 16)
+    end_dt = dt.datetime.now()
 
     systems_props_list: List[TradingSystemProperties] = []
-    ml_systems_props_list: List[MlTradingSystemProperties] = []
+    #ml_systems_props_list: List[MlTradingSystemProperties] = []
 
-    from tet_trading_systems.trading_system_development.trading_systems.live_systems.mean_reversion_stocks import get_mean_reversion_stocks_props
-    mean_reversion_stocks_props = get_mean_reversion_stocks_props(INSTRUMENTS_DB)
-    systems_props_list.append(mean_reversion_stocks_props)
- 
-    #from tet_trading_systems.trading_system_development.trading_systems.trading_system_example import get_example_system_props
-    #example_system_props = get_example_system_props(INSTRUMENTS_DB)
-    #systems_props_list.append(example_system_props)
- 
-    #from system_development.systems_t1.low_vol_bo import get_low_vol_bo_props
-    #low_vol_bo_props = get_low_vol_bo_props(INSTRUMENTS_DB)
-    #systems_props_list.append(low_vol_bo_props)
-
-    #from system_development.systems_t1.omxs_ml_system import get_omxs_ml_system_props
-    #omxs_ml_system_props = get_omxs_ml_system_props(INSTRUMENTS_DB)
-    #ml_systems_props_list.append(omxs_ml_system_props)
-
-    #from tet_trading_systems.trading_system_development.trading_systems.ml_trading_system_example import get_example_ml_system_props
-    #example_ml_system_props = get_example_ml_system_props(INSTRUMENTS_DB)
-    #ml_systems_props_list.append(example_ml_system_props)
+    for trading_system in trading_system_modules:
+        systems_props_list.append(__globals[trading_system].get_props(INSTRUMENTS_DB))
 
     for system_props in systems_props_list:
         # implementera protocol för system_handler_function?
@@ -217,13 +248,15 @@ if __name__ == '__main__':
         #        insert_into_db=True
         #    )
     
-    for system_props in ml_systems_props_list:
-        handle_ml_trading_system(
-            system_props, start_dt, end_dt, 
-            ML_SYSTEMS_DB, ML_ORDERS_DB, 
-            time_series_db=TIME_SERIES_DB, 
-            insert_into_db=True, plot_fig=False
-        )
+    # ml systems should be runnable from same iteration as traditional systems
+    #for system_props in ml_systems_props_list:
+        #handle_ml_trading_system(
+        #system_props.system_handler_function(
+        #    system_props, start_dt, end_dt, 
+        #    ML_SYSTEMS_DB, ML_ORDERS_DB, 
+        #    time_series_db=TIME_SERIES_DB, 
+        #    insert_into_db=True, plot_fig=False
+        #)
         #if system_props['portfolio_args']:
         #    handle_trading_system_portfolio(
         #        system_props, 

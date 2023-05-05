@@ -347,7 +347,7 @@ def get_example_ml_system_props(instruments_db: InstrumentsMongoDb, target_perio
     ) """
 
     return MlTradingSystemProperties( 
-        system_name, 2,
+        system_name, 1,
         preprocess_data,
         (
             symbols_list, '^OMX', price_data_get_req
@@ -360,7 +360,7 @@ def get_example_ml_system_props(instruments_db: InstrumentsMongoDb, target_perio
             {'req_period_iters': target_period, 'entry_period_lookback': target_period},
             {'exit_period_lookback': target_period}
         ),
-        {'plot_fig': True},
+        {},
         None, (), (),
         SafeFPositionSizer, (20, 0.8), (),
         {
