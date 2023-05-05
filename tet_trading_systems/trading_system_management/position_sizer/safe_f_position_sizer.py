@@ -4,6 +4,9 @@ from typing import Dict, List
 import numpy as np
 import pandas as pd
 
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 from TETrading.data.metadata.trading_system_attributes import TradingSystemAttributes
 from TETrading.data.metadata.trading_system_metrics import TradingSystemMetrics
 from TETrading.position.position import Position
@@ -117,6 +120,8 @@ class SafeFPositionSizer(IPositionSizer):
         capital=10000, num_of_sims=2500, symbol='', plot_fig=False, 
         **kwargs
     ):
+        position_list = position_list if position_list[-1].entry_dt else position_list[:-1]
+
         try:
             avg_yearly_positions = len(position_list) / (num_of_periods / avg_yearly_periods)
             forecast_positions = avg_yearly_positions * (years_to_forecast * 1.5)
@@ -135,7 +140,7 @@ class SafeFPositionSizer(IPositionSizer):
             symbol=symbol, plot_fig=plot_fig 
         )
 
-        # sort the 'max_drawdown_(%)' column and convert to a list
+        # sort the Max drawdown column and convert to a list
         max_dds = sorted(monte_carlo_sims_df[TradingSystemMetrics.MAX_DRAWDOWN].to_list())
         # get the drawdown value at the percentile set to be the threshold at which to limit the 
         # probability of getting a max drawdown of that magnitude at when simulating sequences 
